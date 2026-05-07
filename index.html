@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REDATA | Commercial Real Estate Intelligence</title>
+  <style>
+    :root {
+      --ink: #17211d;
+      --muted: #62706a;
+      --line: #dfe5e1;
+      --paper: #f7f8f4;
+      --panel: #ffffff;
+      --brand: #1f6f55;
+      --brand-dark: #134c3a;
+      --accent: #d58c38;
+      --steel: #253b4a;
+      --shadow: 0 18px 45px rgba(23, 33, 29, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 18px clamp(20px, 5vw, 72px);
+      background: rgba(247, 248, 244, 0.92);
+      border-bottom: 1px solid rgba(223, 229, 225, 0.78);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      color: white;
+      background: var(--brand);
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .nav-links a:hover {
+      color: var(--ink);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 18px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      color: #fff;
+      background: var(--brand);
+      box-shadow: 0 12px 24px rgba(31, 111, 85, 0.18);
+    }
+
+    .btn-primary:hover {
+      background: var(--brand-dark);
+    }
+
+    .btn-secondary {
+      color: var(--ink);
+      background: #fff;
+      border-color: var(--line);
+    }
+
+    .hero {
+      position: relative;
+      min-height: calc(100vh - 80px);
+      display: grid;
+      align-items: end;
+      padding: clamp(40px, 7vw, 96px) clamp(20px, 5vw, 72px);
+      overflow: hidden;
+      color: #fff;
+      background:
+        linear-gradient(90deg, rgba(15, 29, 24, 0.88) 0%, rgba(15, 29, 24, 0.67) 46%, rgba(15, 29, 24, 0.22) 100%),
+        url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2200&q=85") center / cover;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 120px;
+      background: linear-gradient(180deg, transparent, rgba(247, 248, 244, 0.98));
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      width: min(760px, 100%);
+      padding-bottom: 56px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      color: #dfeee8;
+      font-size: 0.84rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 32px;
+      height: 2px;
+      background: var(--accent);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 720px;
+      margin-bottom: 20px;
+      font-size: clamp(3rem, 8vw, 7rem);
+      line-height: 0.92;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 650px;
+      margin-bottom: 30px;
+      color: #edf5f1;
+      font-size: clamp(1.05rem, 2vw, 1.35rem);
+      line-height: 1.55;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 34px;
+    }
+
+    .hero .btn-secondary {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.36);
+    }
+
+    .signal-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      max-width: 680px;
+    }
+
+    .signal {
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 8px;
+      background: rgba(13, 26, 21, 0.48);
+      backdrop-filter: blur(12px);
+    }
+
+    .signal strong {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 1.4rem;
+    }
+
+    .signal span {
+      color: #cfe1da;
+      font-size: 0.84rem;
+      line-height: 1.35;
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+    }
+
+    .section {
+      padding: clamp(64px, 9vw, 112px) clamp(20px, 5vw, 72px);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 30px;
+      max-width: 1160px;
+      margin: 0 auto 30px;
+    }
+
+    .section-header h2 {
+      max-width: 680px;
+      margin-bottom: 0;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .section-header p {
+      max-width: 440px;
+      margin-bottom: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .workflow {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .analysis-panel {
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .deal-title strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 1.05rem;
+    }
+
+    .deal-title span {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .score {
+      display: grid;
+      place-items: center;
+      width: 76px;
+      height: 76px;
+      color: #fff;
+      background: conic-gradient(var(--brand) 81%, #dfe5e1 0);
+      border-radius: 50%;
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .metric {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfa;
+    }
+
+    .metric span {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      font-size: 1.35rem;
+    }
+
+    .underwriting-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .underwriting-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 0;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .underwriting-list strong {
+      color: var(--ink);
+    }
+
+    .capability-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .capability {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .capability h3 {
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+    }
+
+    .capability p {
+      margin-bottom: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .asset-types {
+      background: #fff;
+      border-block: 1px solid var(--line);
+    }
+
+    .type-grid {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .type-card {
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      overflow: hidden;
+    }
+
+    .type-card span {
+      width: fit-content;
+      padding: 7px 10px;
+      color: var(--brand-dark);
+      background: #e7f1ed;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .type-card h3 {
+      margin-bottom: 0;
+      font-size: 1.35rem;
+    }
+
+    .model-section {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 42px;
+      align-items: center;
+    }
+
+    .model-copy h2 {
+      margin-bottom: 18px;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1;
+    }
+
+    .model-copy p {
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .model-form {
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 46px;
+      padding: 0 12px;
+      color: var(--ink);
+      background: #fbfcfa;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(31, 111, 85, 0.12);
+    }
+
+    .estimate {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .estimate div {
+      padding: 14px;
+      background: var(--paper);
+      border-radius: 8px;
+    }
+
+    .estimate span {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .estimate strong {
+      font-size: 1.15rem;
+    }
+
+    .site-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 28px clamp(20px, 5vw, 72px);
+      color: #d8e3de;
+      background: #14231d;
+    }
+
+    .site-footer p {
+      margin: 0;
+    }
+
+    .cap-rate-comparison {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      margin: 20px 0 8px;
+      padding: 18px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .cap-rate-item {
+      flex: 1;
+    }
+
+    .cap-rate-item span {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .cap-rate-item strong {
+      display: block;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .cap-rate-arrow {
+      font-size: 1.4rem;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .results-tier-label {
+      margin: 18px 0 6px;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .sensitivity-section {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+
+    .sensitivity-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .sensitivity-subline {
+      margin: 2px 0 0;
+      font-size: 0.84rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .sensitivity-label {
+      display: grid;
+      gap: 7px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .sensitivity-label select {
+      min-width: 180px;
+    }
+
+    .sensitivity-cap-note {
+      margin: 0 0 10px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    .sensitivity-table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+    }
+
+    .sensitivity-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    .sensitivity-table thead tr {
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .sensitivity-table th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .sensitivity-table td {
+      padding: 11px 14px;
+      border-top: 1px solid var(--line);
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .sensitivity-table tbody tr:first-child td {
+      border-top: none;
+    }
+
+    .sensitivity-table tr.is-current {
+      background: #f0f7f4;
+      font-weight: 700;
+    }
+
+    .sensitivity-table tr.is-current td {
+      color: var(--brand-dark);
+    }
+
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 38px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .score-pill.strong {
+      background: #e7f1ed;
+      color: var(--brand-dark);
+    }
+
+    .score-pill.caution {
+      background: #fdf3e3;
+      color: #7a4f0d;
+    }
+
+    .score-pill.weak {
+      background: #fdecea;
+      color: #7f1d1d;
+    }
+
+    @media (max-width: 900px) {
+      .nav-links {
+        display: none;
+      }
+
+      .workflow,
+      .model-section {
+        grid-template-columns: 1fr;
+      }
+
+      .type-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .section-header {
+        display: block;
+      }
+
+      .section-header h2 {
+        margin-bottom: 14px;
+      }
+
+    }
+
+    @media (max-width: 640px) {
+      .site-header {
+        align-items: flex-start;
+      }
+
+      .header-actions .btn-secondary {
+        display: none;
+      }
+
+      .hero {
+        min-height: 760px;
+        background-position: 62% center;
+      }
+
+      .signal-row,
+      .metric-grid,
+      .form-grid,
+      .estimate,
+      .type-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .site-footer {
+        display: block;
+      }
+
+      .site-footer p + p {
+        margin-top: 10px;
+      }
+
+      .sensitivity-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .sensitivity-label {
+        text-align: left;
+      }
+    }
+
+    .form-section-label {
+      margin: 20px 0 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .deal-score-result {
+      margin-top: 24px;
+      padding: 24px;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      text-align: center;
+      transition: border-color 0.3s ease;
+    }
+
+    .deal-score-result > span {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .deal-score-result strong {
+      display: block;
+      font-size: 4rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 10px;
+      transition: color 0.3s ease;
+    }
+
+    .deal-score-result p {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .secondary-estimate {
+      display: grid;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+
+    .metric-note {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+      font-weight: 400;
+    }
+
+    .export-btn {
+      margin-top: 20px;
+      width: 100%;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      #model,
+      #model * {
+        visibility: visible;
+      }
+
+      #model {
+        position: absolute;
+        inset: 0;
+        padding: 40px;
+      }
+
+      .export-btn {
+        display: none;
+      }
+
+      .model-copy h2::before {
+        content: "REDATA — Deal Analysis Summary";
+        display: block;
+        font-size: 0.84rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #62706a;
+        margin-bottom: 8px;
+      }
+
+      .form-grid {
+        display: none;
+      }
+
+      .form-section-label {
+        display: none;
+      }
+
+      .results-tier-label {
+        display: block;
+      }
+
+      .cap-rate-comparison {
+        border: 1px solid #dfe5e1;
+      }
+
+      .sensitivity-table-wrap {
+        overflow: visible;
+      }
+
+      .sensitivity-section {
+        margin-top: 20px;
+        padding-top: 16px;
+      }
+
+      .sensitivity-table {
+        font-size: 0.78rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="REDATA home">
+      <span class="brand-mark">RD</span>
+      <span>REDATA</span>
+    </a>
+
+    <nav class="nav-links" aria-label="Main navigation">
+      <a href="#platform">Platform</a>
+      <a href="#assets">Asset Types</a>
+      <a href="#model">Deal Model</a>
+    </nav>
+
+    <div class="header-actions">
+      <a class="btn btn-secondary" href="#model">Preview Model</a>
+      <a class="btn btn-primary" href="#platform">Explore</a>
+    </div>
+  </header>
+
+  <section class="hero" id="top">
+    <div class="hero-content">
+      <span class="eyebrow">Commercial real estate analysis</span>
+      <h1>REDATA</h1>
+      <p class="hero-copy">
+        A future-ready underwriting workspace for evaluating acquisitions, comparing market signals,
+        scoring risk, and turning messy deal inputs into clear investment decisions.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#model">Run a Sample Deal</a>
+        <a class="btn btn-secondary" href="#platform">View Capabilities</a>
+      </div>
+      <div class="signal-row" aria-label="Platform highlights">
+        <div class="signal">
+          <strong>92</strong>
+          <span>Example investment score</span>
+        </div>
+        <div class="signal">
+          <strong>7.4%</strong>
+          <span>Projected stabilized cap rate</span>
+        </div>
+        <div class="signal">
+          <strong>14.8%</strong>
+          <span>Illustrative levered IRR</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <section class="section" id="platform">
+      <div class="section-header">
+        <h2>Analyze deals from first look to investment committee.</h2>
+        <p>
+          REDATA is structured around the core questions investors ask before committing capital:
+          what is the upside, what can break, and how does the opportunity compare to alternatives?
+        </p>
+      </div>
+
+      <div class="workflow">
+        <article class="analysis-panel" aria-label="Sample deal scorecard">
+          <div class="panel-top">
+            <div class="deal-title">
+              <strong>Sample Deal: Harbor Industrial Park</strong>
+              <span>Industrial | 248,000 SF | Southeast Market</span>
+            </div>
+            <div class="score">81</div>
+          </div>
+
+          <div class="metric-grid">
+            <div class="metric">
+              <span>Purchase Price</span>
+              <strong>$42.6M</strong>
+            </div>
+            <div class="metric">
+              <span>NOI Growth</span>
+              <strong>5.8%</strong>
+            </div>
+            <div class="metric">
+              <span>Exit Value</span>
+              <strong>$58.4M</strong>
+            </div>
+            <div class="metric">
+              <span>Debt Yield</span>
+              <strong>10.9%</strong>
+            </div>
+          </div>
+
+          <ul class="underwriting-list">
+            <li><strong>Market momentum</strong><span>Strong</span></li>
+            <li><strong>Tenant rollover risk</strong><span>Moderate</span></li>
+            <li><strong>Capital plan sensitivity</strong><span>High</span></li>
+            <li><strong>Comparable sale support</strong><span>Developing</span></li>
+          </ul>
+        </article>
+
+        <div class="capability-list">
+          <article class="capability">
+            <h3>Deal Scoring</h3>
+            <p>Combine return targets, lease risk, market liquidity, debt structure, and basis into one transparent score.</p>
+          </article>
+          <article class="capability">
+            <h3>Underwriting Workspace</h3>
+            <p>Centralize assumptions for revenue, expenses, capex, financing, exit pricing, and downside scenarios.</p>
+          </article>
+          <article class="capability">
+            <h3>Market Intelligence</h3>
+            <p>Prepare for future integrations across comps, rent trends, vacancy, demographic shifts, and supply pipelines.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section asset-types" id="assets">
+      <div class="section-header">
+        <h2>Built for the major commercial asset classes.</h2>
+        <p>Start with the property type, then adapt assumptions, risk flags, and return metrics to the deal.</p>
+      </div>
+
+      <div class="type-grid">
+        <article class="type-card">
+          <span>Multifamily</span>
+          <h3>Rent growth, concessions, renovation premiums.</h3>
+        </article>
+        <article class="type-card">
+          <span>Industrial</span>
+          <h3>Tenant credit, clear height, logistics demand.</h3>
+        </article>
+        <article class="type-card">
+          <span>Office</span>
+          <h3>Rollover exposure, TI costs, leasing velocity.</h3>
+        </article>
+        <article class="type-card">
+          <span>Retail</span>
+          <h3>Sales trends, co-tenancy, trade area strength.</h3>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="model">
+      <div class="model-section">
+        <div class="model-copy">
+          <h2>Score a deal in under a minute.</h2>
+          <p>
+            Enter what's visible on any LoopNet listing — asking price, square footage,
+            year built, and asset type. REDATA estimates NOI, structures the debt,
+            projects exit value, and scores the deal across four weighted criteria.
+          </p>
+        </div>
+
+        <form class="model-form" id="dealForm">
+          <div class="form-grid">
+            <label>
+              Asset Type
+              <select id="assetType">
+                <option>Industrial</option>
+                <option>Multifamily</option>
+                <option>Office</option>
+                <option>Retail</option>
+              </select>
+            </label>
+            <label>
+              Asking Price
+              <input id="price" type="text" inputmode="numeric" value="42,600,000"
+                     autocomplete="off" spellcheck="false" />
+            </label>
+            <label>
+              Square Footage
+              <input id="sqft" type="text" inputmode="numeric" value="248,000"
+                     autocomplete="off" spellcheck="false" />
+            </label>
+            <label>
+              Year Built
+              <input id="yearBuilt" type="number" min="1900" max="2025" value="2005" />
+            </label>
+            <label>
+              Advertised NOI (optional)
+              <input id="advertisedNoi" type="number" min="0" placeholder="Leave blank to estimate" />
+            </label>
+            <label>
+              Advertised Cap Rate % (optional)
+              <input id="advertisedCapRate" type="number" min="0" step="0.1" placeholder="Leave blank to estimate" />
+            </label>
+            <label>
+              Holding Period in Years
+              <input id="holdingPeriod" type="number" min="1" max="30" value="5" />
+            </label>
+          </div>
+
+          <p class="form-section-label">Estimated by REDATA</p>
+
+          <!-- Cap rate comparison -->
+          <div class="cap-rate-comparison" aria-label="Cap rate story">
+            <div class="cap-rate-item">
+              <span>Going-In Cap Rate</span>
+              <strong id="goingInCapRateOutput">—</strong>
+            </div>
+            <div class="cap-rate-arrow">→</div>
+            <div class="cap-rate-item">
+              <span>Est. Exit Cap Rate</span>
+              <strong id="exitCapRateOutput">—</strong>
+              <small class="metric-note">+0.35% expansion assumed</small>
+            </div>
+          </div>
+
+          <!-- Tier 1: Return Summary -->
+          <p class="results-tier-label">Return summary</p>
+          <div class="estimate" aria-live="polite">
+            <div>
+              <span>IRR</span>
+              <strong id="irrOutput2">—</strong>
+              <small class="metric-note">Simplified estimate</small>
+            </div>
+            <div>
+              <span>Exit Value</span>
+              <strong id="exitValueOutput">—</strong>
+            </div>
+            <div>
+              <span>Value Spread</span>
+              <strong id="spreadOutput">—</strong>
+            </div>
+          </div>
+
+          <!-- Tier 2: Debt & Structure -->
+          <p class="results-tier-label">Debt &amp; structure</p>
+          <div class="estimate secondary-estimate" aria-live="polite">
+            <div>
+              <span>DSCR</span>
+              <strong id="dscrOutput">—</strong>
+            </div>
+            <div>
+              <span>Debt Yield</span>
+              <strong id="debtYieldOutput">—</strong>
+            </div>
+            <div>
+              <span>Est. Loan Amount</span>
+              <strong id="loanAmountOutput">—</strong>
+            </div>
+            <div>
+              <span>Est. Debt Service</span>
+              <strong id="debtServiceOutput">—</strong>
+            </div>
+          </div>
+
+          <!-- Tier 3: Property Intelligence -->
+          <p class="results-tier-label">Property intelligence</p>
+          <div class="estimate secondary-estimate" aria-live="polite">
+            <div>
+              <span>NOI</span>
+              <strong id="noiOutput">—</strong>
+            </div>
+            <div>
+              <span>Exit NOI</span>
+              <strong id="exitNoiOutput">—</strong>
+              <small class="metric-note">Grown at 2.5% annually</small>
+            </div>
+            <div>
+              <span>Price per SF</span>
+              <strong id="pricePerSfOutput">—</strong>
+            </div>
+            <div>
+              <span>NOI per SF</span>
+              <strong id="noiPerSfOutput">—</strong>
+            </div>
+          </div>
+
+          <div class="deal-score-result" id="dealScoreResult" aria-live="polite">
+            <span>Deal Score</span>
+            <strong id="dealScoreOutput">0</strong>
+            <p id="dealVerdictOutput">Enter assumptions to score the deal</p>
+          </div>
+
+          <button type="button" class="btn btn-primary export-btn" id="exportBtn">
+            Export Results
+          </button>
+
+          <div class="sensitivity-section" id="sensitivitySection">
+            <div class="sensitivity-header">
+              <div>
+                <p class="results-tier-label" style="margin-top: 28px;">Sensitivity analysis</p>
+                <p class="sensitivity-subline">How does this deal hold up as assumptions change?</p>
+              </div>
+              <div class="sensitivity-controls">
+                <label class="sensitivity-label">
+                  Stress test
+                  <select id="sensitivityVariable">
+                    <option value="price">Asking Price</option>
+                    <option value="capRate">Going-In Cap Rate</option>
+                    <option value="holdingPeriod">Holding Period</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <p class="sensitivity-cap-note" id="sensitivityCapNote" style="display:none;">
+              NOI is derived from the stressed cap rate in this view, independent of any advertised NOI entered above.
+            </p>
+
+            <div class="sensitivity-table-wrap">
+              <table class="sensitivity-table" id="sensitivityTable">
+                <thead>
+                  <tr>
+                    <th id="sensitivityColHeader">Asking Price</th>
+                    <th>Cap Rate</th>
+                    <th>IRR</th>
+                    <th>DSCR</th>
+                    <th>Score</th>
+                  </tr>
+                </thead>
+                <tbody id="sensitivityBody">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>REDATA</p>
+    <p>Commercial real estate intelligence platform concept.</p>
+  </footer>
+
+  <script>
+    const assetTypeInput = document.querySelector("#assetType");
+    const priceInput = document.querySelector("#price");
+    const sqftInput = document.querySelector("#sqft");
+    const yearBuiltInput = document.querySelector("#yearBuilt");
+    const advertisedNoiInput = document.querySelector("#advertisedNoi");
+    const advertisedCapRateInput = document.querySelector("#advertisedCapRate");
+    const holdingPeriodInput = document.querySelector("#holdingPeriod");
+    const spreadOutput = document.querySelector("#spreadOutput");
+    const dscrOutput = document.querySelector("#dscrOutput");
+    const debtYieldOutput = document.querySelector("#debtYieldOutput");
+    const loanAmountOutput = document.querySelector("#loanAmountOutput");
+    const debtServiceOutput = document.querySelector("#debtServiceOutput");
+    const noiOutput = document.querySelector("#noiOutput");
+    const dealScoreResult = document.querySelector("#dealScoreResult");
+    const dealScoreOutput = document.querySelector("#dealScoreOutput");
+    const dealVerdictOutput = document.querySelector("#dealVerdictOutput");
+
+    function formatWithCommas(value) {
+      const num = parseInt(value.toString().replace(/,/g, ""), 10);
+      if (isNaN(num)) return "";
+      return num.toLocaleString("en-US");
+    }
+
+    function parseCommaNumber(value) {
+      const stripped = value.toString().replace(/,/g, "");
+      const num = parseInt(stripped, 10);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function attachCommaFormatter(input) {
+      input.addEventListener("input", function() {
+        const raw = this.value.replace(/,/g, "").replace(/[^0-9]/g, "");
+        const cursor = this.selectionStart;
+        const prevLen = this.value.length;
+        if (raw === "") {
+          this.value = "";
+          return;
+        }
+        const formatted = parseInt(raw, 10).toLocaleString("en-US");
+        this.value = formatted;
+        const newLen = this.value.length;
+        const newCursor = cursor + (newLen - prevLen);
+        this.setSelectionRange(newCursor, newCursor);
+      });
+    }
+
+    attachCommaFormatter(document.querySelector("#price"));
+    attachCommaFormatter(document.querySelector("#sqft"));
+
+    const money = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 1,
+      notation: "compact"
+    });
+
+    function getEstimatedCapRate(assetType) {
+      if (assetType === "Multifamily") {
+        return 5.5;
+      }
+
+      if (assetType === "Office") {
+        return 7.5;
+      }
+
+      if (assetType === "Retail") {
+        return 7;
+      }
+
+      return 6.5;
+    }
+
+    function getYearBuiltPenalty(yearBuilt) {
+      if (yearBuilt >= 2010) {
+        return 0;
+      }
+
+      if (yearBuilt >= 2000) {
+        return 3;
+      }
+
+      if (yearBuilt >= 1980) {
+        return 6;
+      }
+
+      return 10;
+    }
+
+    function getCapRateAdjustment(assetType) {
+      if (assetType === "Multifamily") {
+        return -0.5;
+      }
+
+      if (assetType === "Office") {
+        return 0.5;
+      }
+
+      if (assetType === "Retail") {
+        return 1;
+      }
+
+      return 0;
+    }
+
+    function scoreCapRate(capRatePercent, assetType) {
+      const adjustment = getCapRateAdjustment(assetType);
+      const strong = 7 + adjustment;
+      const good = 6 + adjustment;
+      const watch = 5 + adjustment;
+
+      if (capRatePercent >= strong) {
+        return 25;
+      }
+
+      if (capRatePercent >= good) {
+        return 18;
+      }
+
+      if (capRatePercent >= watch) {
+        return 10;
+      }
+
+      return 3;
+    }
+
+    function scoreDscr(dscr) {
+      if (dscr >= 1.4) {
+        return 25;
+      }
+
+      if (dscr >= 1.25) {
+        return 18;
+      }
+
+      if (dscr >= 1.1) {
+        return 10;
+      }
+
+      return 3;
+    }
+
+    function scoreValueSpread(spreadPercent) {
+      if (spreadPercent > 15) {
+        return 25;
+      }
+
+      if (spreadPercent >= 5) {
+        return 18;
+      }
+
+      if (spreadPercent >= 0) {
+        return 10;
+      }
+
+      return 3;
+    }
+
+    function scoreIrr(irrPercent) {
+      if (irrPercent >= 15) {
+        return 25;
+      }
+
+      if (irrPercent >= 12) {
+        return 18;
+      }
+
+      if (irrPercent >= 9) {
+        return 10;
+      }
+
+      return 3;
+    }
+
+    function computeDealScore(metrics) {
+      return scoreCapRate(metrics.capRatePercent, metrics.assetType)
+        + scoreDscr(metrics.dscr)
+        + scoreValueSpread(metrics.spreadPercent)
+        + scoreIrr(metrics.irrPercent);
+    }
+
+    function updateScoreDisplay(score) {
+      let color = "#9f342f";
+      let verdict = "Deal does not meet return thresholds";
+
+      if (score >= 75) {
+        color = "var(--brand-dark)";
+        verdict = "Strong acquisition candidate";
+      } else if (score >= 50) {
+        color = "var(--accent)";
+        verdict = "Proceed with caution - revisit assumptions";
+      }
+
+      dealScoreOutput.textContent = score;
+      dealScoreOutput.style.color = color;
+      dealScoreResult.style.borderColor = color;
+      dealVerdictOutput.textContent = verdict;
+    }
+
+    function updateDealPreview() {
+      const assetType = assetTypeInput.value;
+      const price = parseCommaNumber(priceInput.value) || 0;
+      const sqft = parseCommaNumber(sqftInput.value) || 1;
+      const yearBuilt = Number(yearBuiltInput.value) || 0;
+      const holdingPeriod = Number(holdingPeriodInput.value) || 1;
+      const noiGrowthRate = 0.025;
+      const advertisedNoi = Number(advertisedNoiInput.value);
+      const advertisedCapRatePct = Number(advertisedCapRateInput.value);
+      const estimatedCapRate = getEstimatedCapRate(assetType);
+
+      let noi;
+      if (advertisedNoiInput.value !== "") {
+        noi = advertisedNoi;
+      } else if (advertisedCapRateInput.value !== "") {
+        noi = price * (advertisedCapRatePct / 100);
+      } else {
+        noi = price * (estimatedCapRate / 100);
+      }
+
+      const goingInCapRatePct = price > 0 ? (noi / price) * 100 : 0;
+      const exitCapRatePct = goingInCapRatePct + 0.35;
+      const exitNoi = noi * Math.pow(1 + noiGrowthRate, holdingPeriod);
+      const exitValue = exitCapRatePct > 0 ? exitNoi / (exitCapRatePct / 100) : 0;
+      const valueSpread = exitValue - price;
+      const valueSpreadPct = price > 0 ? (valueSpread / price) * 100 : -100;
+      const loanAmount = price * 0.65;
+      const debtService = loanAmount * 0.072;
+      const dscr = debtService > 0 ? noi / debtService : 0;
+      const debtYield = loanAmount > 0 ? (noi / loanAmount) * 100 : 0;
+      const cumulativeNoi = noi * holdingPeriod;
+      const irr = price > 0
+        ? ((exitValue - price + cumulativeNoi) / price) / holdingPeriod * 100
+        : 0;
+      const pricePerSf = sqft > 0 ? price / sqft : 0;
+      const noiPerSf = sqft > 0 ? noi / sqft : 0;
+
+      const rawScore = computeDealScore({
+        assetType,
+        capRatePercent: goingInCapRatePct,
+        dscr,
+        spreadPercent: valueSpreadPct,
+        irrPercent: irr
+      });
+      const yearBuiltPenalty = getYearBuiltPenalty(yearBuilt);
+      const adjustedScore = Math.max(0, rawScore - yearBuiltPenalty);
+
+      document.querySelector("#irrOutput2").textContent = `${irr.toFixed(1)}%`;
+      document.querySelector("#goingInCapRateOutput").textContent =
+        `${goingInCapRatePct.toFixed(1)}%`;
+      document.querySelector("#exitCapRateOutput").textContent =
+        `${exitCapRatePct.toFixed(2)}%`;
+      document.querySelector("#exitValueOutput").textContent =
+        money.format(exitValue);
+      spreadOutput.textContent =
+        `${valueSpread >= 0 ? "+" : ""}${money.format(valueSpread)}`;
+      spreadOutput.style.color =
+        valueSpread >= 0 ? "var(--brand-dark)" : "#9f342f";
+      dscrOutput.textContent = dscr.toFixed(2);
+      debtYieldOutput.textContent = `${debtYield.toFixed(1)}%`;
+      loanAmountOutput.textContent = money.format(loanAmount);
+      debtServiceOutput.textContent = money.format(debtService);
+      noiOutput.textContent = money.format(noi);
+      document.querySelector("#exitNoiOutput").textContent = money.format(exitNoi);
+      document.querySelector("#pricePerSfOutput").textContent =
+        `$${pricePerSf.toFixed(0)}/SF`;
+      document.querySelector("#noiPerSfOutput").textContent =
+        `$${noiPerSf.toFixed(2)}/SF`;
+      updateScoreDisplay(adjustedScore);
+    }
+
+    [
+      assetTypeInput,
+      priceInput,
+      sqftInput,
+      yearBuiltInput,
+      advertisedNoiInput,
+      advertisedCapRateInput,
+      holdingPeriodInput
+    ].forEach((input) => {
+      input.addEventListener("input", () => updateDealPreview());
+      input.addEventListener("change", () => updateDealPreview());
+    });
+
+    updateDealPreview();
+
+    document.getElementById('exportBtn').addEventListener('click', function() {
+      window.print();
+    });
+
+    const sensitivityVariable = document.getElementById("sensitivityVariable");
+    const sensitivityBody = document.getElementById("sensitivityBody");
+    const sensitivityColHeader = document.getElementById("sensitivityColHeader");
+
+    function getScorePillClass(score) {
+      if (score >= 75) return "strong";
+      if (score >= 50) return "caution";
+      return "weak";
+    }
+
+    function computeRowMetrics(overrideKey, overrideValue) {
+      const assetType = assetTypeInput.value;
+      const basePrice = parseCommaNumber(priceInput.value) || 0;
+      const yearBuilt = Number(yearBuiltInput.value) || 0;
+      const baseHoldingPeriod = Number(holdingPeriodInput.value) || 1;
+      const noiGrowthRate = 0.025;
+
+      const advertisedNoi = Number(advertisedNoiInput.value);
+      const advertisedCapRatePct = Number(advertisedCapRateInput.value);
+      const estimatedCapRate = getEstimatedCapRate(assetType);
+
+      const price = overrideKey === "price" ? overrideValue : basePrice;
+      const holdingPeriod = overrideKey === "holdingPeriod" ? overrideValue : baseHoldingPeriod;
+
+      let noi;
+      if (overrideKey === "capRate") {
+        noi = price * (overrideValue / 100);
+      } else if (advertisedNoiInput.value !== "") {
+        noi = advertisedNoi;
+      } else if (advertisedCapRateInput.value !== "") {
+        noi = price * (advertisedCapRatePct / 100);
+      } else {
+        noi = price * (estimatedCapRate / 100);
+      }
+
+      const goingInCapRatePct = price > 0 ? (noi / price) * 100 : 0;
+      const exitCapRatePct = goingInCapRatePct + 0.35;
+      const exitNoi = noi * Math.pow(1 + noiGrowthRate, holdingPeriod);
+      const exitValue = exitCapRatePct > 0 ? exitNoi / (exitCapRatePct / 100) : 0;
+      const valueSpread = exitValue - price;
+      const valueSpreadPct = price > 0 ? (valueSpread / price) * 100 : -100;
+      const loanAmount = price * 0.65;
+      const debtService = loanAmount * 0.072;
+      const dscr = debtService > 0 ? noi / debtService : 0;
+      const irr = price > 0
+        ? ((exitValue - price + noi * holdingPeriod) / price) / holdingPeriod * 100
+        : 0;
+
+      const rawScore = computeDealScore({
+        assetType,
+        capRatePercent: goingInCapRatePct,
+        dscr,
+        spreadPercent: valueSpreadPct,
+        irrPercent: irr
+      });
+      const penalty = getYearBuiltPenalty(yearBuilt);
+      const score = Math.max(0, rawScore - penalty);
+
+      return { goingInCapRatePct, irr, dscr, score };
+    }
+
+    function buildSensitivityTable() {
+      const variable = sensitivityVariable.value;
+      const basePrice = parseCommaNumber(priceInput.value) || 0;
+      const baseHoldingPeriod = Number(holdingPeriodInput.value) || 1;
+      const estimatedCapRate = getEstimatedCapRate(assetTypeInput.value);
+      const advertisedCapRatePct = Number(advertisedCapRateInput.value);
+      const baseCapRate = advertisedCapRateInput.value !== ""
+        ? advertisedCapRatePct
+        : estimatedCapRate;
+
+      let steps = [];
+      let currentValue;
+      let formatLabel;
+
+      if (variable === "price") {
+        currentValue = basePrice;
+        const step = Math.max(100000, Math.round(basePrice * 0.06 / 100000) * 100000) || 1000000;
+        for (let i = -3; i <= 3; i++) {
+          const candidate = currentValue + i * step;
+          if (candidate > 0) steps.push(candidate);
+        }
+        sensitivityColHeader.textContent = "Asking Price";
+        formatLabel = (v) => money.format(v);
+      } else if (variable === "capRate") {
+        currentValue = baseCapRate;
+        const step = 0.25;
+        for (let i = -3; i <= 3; i++) {
+          steps.push(Math.round((currentValue + i * step) * 100) / 100);
+        }
+        sensitivityColHeader.textContent = "Going-In Cap Rate";
+        formatLabel = (v) => `${v.toFixed(2)}%`;
+      } else if (variable === "holdingPeriod") {
+        currentValue = baseHoldingPeriod;
+        steps = [1, 2, 3, 5, 7, 10, 15].filter(v => v <= 30);
+        sensitivityColHeader.textContent = "Holding Period";
+        formatLabel = (v) => `${v} yr${v !== 1 ? "s" : ""}`;
+      }
+
+      const capNote = document.getElementById("sensitivityCapNote");
+      capNote.style.display = variable === "capRate" ? "block" : "none";
+      sensitivityBody.innerHTML = "";
+
+      steps.forEach((val) => {
+        const metrics = computeRowMetrics(variable, val);
+        const isCurrent = variable === "holdingPeriod"
+          ? val === currentValue
+          : variable === "price"
+            ? Math.abs(val - currentValue) === Math.min(...steps.map(s => Math.abs(s - currentValue)))
+            : Math.abs(val - currentValue) < 0.001;
+
+        const pillClass = getScorePillClass(metrics.score);
+        const tr = document.createElement("tr");
+        if (isCurrent) tr.classList.add("is-current");
+
+        tr.innerHTML = `
+          <td>${formatLabel(val)}${isCurrent ? " ●" : ""}</td>
+          <td>${metrics.goingInCapRatePct.toFixed(1)}%</td>
+          <td>${metrics.irr.toFixed(1)}%</td>
+          <td>${metrics.dscr.toFixed(2)}</td>
+          <td><span class="score-pill ${pillClass}">${metrics.score}</span></td>
+        `;
+        sensitivityBody.appendChild(tr);
+      });
+    }
+
+    sensitivityVariable.addEventListener("change", buildSensitivityTable);
+
+    const originalUpdateDealPreview = updateDealPreview;
+    updateDealPreview = function() {
+      originalUpdateDealPreview();
+      buildSensitivityTable();
+    };
+
+    buildSensitivityTable();
+  </script>
+</body>
+</html>
