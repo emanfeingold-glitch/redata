@@ -6,16 +6,18 @@
   <title>REDATA | Commercial Real Estate Intelligence</title>
   <style>
     :root {
-      --ink: #17211d;
-      --muted: #62706a;
-      --line: #dfe5e1;
-      --paper: #f7f8f4;
+      --ink: #0f1a16;
+      --muted: #526b61;
+      --line: #d0dbd6;
+      --paper: #f4f6f2;
       --panel: #ffffff;
-      --brand: #1f6f55;
-      --brand-dark: #134c3a;
-      --accent: #d58c38;
-      --steel: #253b4a;
-      --shadow: 0 18px 45px rgba(23, 33, 29, 0.12);
+      --brand: #1a6b50;
+      --brand-dark: #0e4a36;
+      --accent: #c87d2a;
+      --steel: #1b3a52;
+      --steel-dark: #102538;
+      --shadow: 0 20px 50px rgba(10, 25, 20, 0.14);
+      --shadow-deep: 0 32px 72px rgba(10, 25, 20, 0.22);
     }
 
     * {
@@ -52,6 +54,25 @@
       background: rgba(247, 248, 244, 0.92);
       border-bottom: 1px solid rgba(223, 229, 225, 0.78);
       backdrop-filter: blur(14px);
+      transition: background 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .site-header.scrolled {
+      background: rgba(14, 74, 54, 0.97);
+      border-bottom-color: rgba(26, 107, 80, 0.4);
+      box-shadow: 0 4px 24px rgba(10, 25, 20, 0.18);
+    }
+
+    .site-header.scrolled .brand,
+    .site-header.scrolled .nav-links,
+    .site-header.scrolled .nav-links a {
+      color: #e8f2ee;
+    }
+
+    .site-header.scrolled .btn-secondary {
+      color: #e8f2ee;
+      border-color: rgba(232, 242, 238, 0.35);
+      background: rgba(255,255,255,0.08);
     }
 
     .brand {
@@ -134,7 +155,7 @@
       overflow: hidden;
       color: #fff;
       background:
-        linear-gradient(90deg, rgba(15, 29, 24, 0.88) 0%, rgba(15, 29, 24, 0.67) 46%, rgba(15, 29, 24, 0.22) 100%),
+        linear-gradient(135deg, rgba(10, 36, 28, 0.94) 0%, rgba(15, 45, 65, 0.82) 50%, rgba(10, 36, 28, 0.55) 100%),
         url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2200&q=85") center / cover;
     }
 
@@ -400,7 +421,7 @@
       max-width: 1160px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 14px;
     }
 
@@ -709,7 +730,7 @@
       }
 
       .type-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       }
 
       .section-header {
@@ -827,6 +848,11 @@
     }
 
     @media print {
+      .reveal {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+
       body * {
         visibility: hidden;
       }
@@ -886,6 +912,84 @@
         font-size: 0.78rem;
       }
     }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+    .reveal-delay-6 { transition-delay: 0.6s; }
+
+    .metric:hover {
+      border-color: var(--brand);
+      box-shadow: 0 4px 16px rgba(26, 107, 80, 0.1);
+      transform: translateY(-2px);
+      transition: all 0.22s ease;
+    }
+
+    .type-card:hover {
+      border-color: var(--steel);
+      background: linear-gradient(135deg, #f0f7f4 0%, #eaf1f7 100%);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(27, 58, 82, 0.12);
+      transition: all 0.25s ease;
+    }
+
+    .capability:hover {
+      border-color: var(--brand);
+      box-shadow: 0 6px 22px rgba(26, 107, 80, 0.1);
+      transform: translateY(-2px);
+      transition: all 0.22s ease;
+    }
+
+    .metric, .type-card, .capability {
+      transition: all 0.22s ease;
+    }
+
+    .deal-score-result {
+      background: linear-gradient(135deg, #f7f9f7 0%, #eef4f7 100%);
+    }
+
+    .analysis-panel {
+      border-top: 3px solid var(--brand);
+    }
+
+    .model-form {
+      border-top: 3px solid var(--steel);
+    }
+
+    .sensitivity-table tr.is-current {
+      background: linear-gradient(90deg, #e8f2ee, #eaf1f7);
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-content {
+      animation: fadeSlideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .signal {
+      transition: background 0.22s ease, border-color 0.22s ease;
+    }
+
+    .signal:hover {
+      background: rgba(26, 107, 80, 0.22);
+      border-color: rgba(255,255,255,0.5);
+    }
   </style>
 </head>
 <body>
@@ -938,7 +1042,7 @@
 
   <main>
     <section class="section" id="platform">
-      <div class="section-header">
+      <div class="section-header reveal">
         <h2>Analyze deals from first look to investment committee.</h2>
         <p>
           REDATA is structured around the core questions investors ask before committing capital:
@@ -947,7 +1051,7 @@
       </div>
 
       <div class="workflow">
-        <article class="analysis-panel" aria-label="Sample deal scorecard">
+        <article class="analysis-panel reveal" aria-label="Sample deal scorecard">
           <div class="panel-top">
             <div class="deal-title">
               <strong>Sample Deal: Harbor Industrial Park</strong>
@@ -984,15 +1088,15 @@
         </article>
 
         <div class="capability-list">
-          <article class="capability">
+          <article class="capability reveal reveal-delay-1">
             <h3>Deal Scoring</h3>
             <p>Combine return targets, lease risk, market liquidity, debt structure, and basis into one transparent score.</p>
           </article>
-          <article class="capability">
+          <article class="capability reveal reveal-delay-2">
             <h3>Underwriting Workspace</h3>
             <p>Centralize assumptions for revenue, expenses, capex, financing, exit pricing, and downside scenarios.</p>
           </article>
-          <article class="capability">
+          <article class="capability reveal reveal-delay-3">
             <h3>Market Intelligence</h3>
             <p>Prepare for future integrations across comps, rent trends, vacancy, demographic shifts, and supply pipelines.</p>
           </article>
@@ -1001,27 +1105,39 @@
     </section>
 
     <section class="section asset-types" id="assets">
-      <div class="section-header">
+      <div class="section-header reveal">
         <h2>Built for the major commercial asset classes.</h2>
         <p>Start with the property type, then adapt assumptions, risk flags, and return metrics to the deal.</p>
       </div>
 
       <div class="type-grid">
-        <article class="type-card">
+        <article class="type-card reveal reveal-delay-1">
           <span>Multifamily</span>
           <h3>Rent growth, concessions, renovation premiums.</h3>
         </article>
-        <article class="type-card">
+        <article class="type-card reveal reveal-delay-2">
           <span>Industrial</span>
           <h3>Tenant credit, clear height, logistics demand.</h3>
         </article>
-        <article class="type-card">
+        <article class="type-card reveal reveal-delay-3">
           <span>Office</span>
           <h3>Rollover exposure, TI costs, leasing velocity.</h3>
         </article>
-        <article class="type-card">
+        <article class="type-card reveal reveal-delay-4">
           <span>Retail</span>
           <h3>Sales trends, co-tenancy, trade area strength.</h3>
+        </article>
+        <article class="type-card reveal reveal-delay-1">
+          <span>Medical Office</span>
+          <h3>Healthcare tenancy, long leases, recession resistance.</h3>
+        </article>
+        <article class="type-card reveal reveal-delay-2">
+          <span>Self-Storage</span>
+          <h3>Operational income, demand drivers, market saturation.</h3>
+        </article>
+        <article class="type-card reveal reveal-delay-3">
+          <span>Data Center</span>
+          <h3>Power capacity, hyperscaler demand, infrastructure vintage.</h3>
         </article>
       </div>
     </section>
@@ -1037,7 +1153,7 @@
           </p>
         </div>
 
-        <form class="model-form" id="dealForm">
+        <form class="model-form reveal" id="dealForm">
           <div class="form-grid">
             <label>
               Asset Type
@@ -1046,6 +1162,9 @@
                 <option>Multifamily</option>
                 <option>Office</option>
                 <option>Retail</option>
+                <option>Medical Office</option>
+                <option>Self-Storage</option>
+                <option>Data Center</option>
               </select>
             </label>
             <label>
@@ -1212,6 +1331,28 @@
   </footer>
 
   <script>
+    // Sticky header dark mode on scroll
+    const siteHeader = document.querySelector('.site-header');
+    window.addEventListener('scroll', () => {
+      siteHeader.classList.toggle('scrolled', window.scrollY > 60);
+    }, { passive: true });
+  </script>
+
+  <script>
+    // Scroll reveal
+    const revealEls = document.querySelectorAll('.reveal');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    revealEls.forEach(el => revealObserver.observe(el));
+  </script>
+
+  <script>
     const assetTypeInput = document.querySelector("#assetType");
     const priceInput = document.querySelector("#price");
     const sqftInput = document.querySelector("#sqft");
@@ -1281,10 +1422,27 @@
         return 7;
       }
 
+      if (assetType === "Medical Office") {
+        return 6.0;
+      }
+
+      if (assetType === "Self-Storage") {
+        return 6.25;
+      }
+
+      if (assetType === "Data Center") {
+        return 5.75;
+      }
+
       return 6.5;
     }
 
     function getYearBuiltPenalty(yearBuilt) {
+      const assetType = document.querySelector("#assetType").value;
+      if (assetType === "Data Center") {
+        return 0;
+      }
+
       if (yearBuilt >= 2010) {
         return 0;
       }
@@ -1311,6 +1469,18 @@
 
       if (assetType === "Retail") {
         return 1;
+      }
+
+      if (assetType === "Medical Office") {
+        return -0.25;
+      }
+
+      if (assetType === "Self-Storage") {
+        return 0.25;
+      }
+
+      if (assetType === "Data Center") {
+        return -0.5;
       }
 
       return 0;
@@ -1410,9 +1580,42 @@
       dealVerdictOutput.textContent = verdict;
     }
 
+    function computeIRR(cashFlows) {
+      let rate = 0.1;
+      for (let i = 0; i < 100; i++) {
+        let npv = 0, dnpv = 0;
+        for (let t = 0; t < cashFlows.length; t++) {
+          npv  += cashFlows[t] / Math.pow(1 + rate, t);
+          dnpv -= t * cashFlows[t] / Math.pow(1 + rate, t + 1);
+        }
+        const delta = npv / dnpv;
+        rate -= delta;
+        if (Math.abs(delta) < 1e-7) break;
+      }
+      return isFinite(rate) ? rate * 100 : 0;
+    }
+
     function updateDealPreview() {
       const assetType = assetTypeInput.value;
       const price = parseCommaNumber(priceInput.value) || 0;
+      if (price === 0) {
+        const placeholders = [
+          "irrOutput2", "goingInCapRateOutput", "exitCapRateOutput",
+          "exitValueOutput", "spreadOutput", "dscrOutput", "debtYieldOutput",
+          "loanAmountOutput", "debtServiceOutput", "noiOutput",
+          "exitNoiOutput", "pricePerSfOutput", "noiPerSfOutput"
+        ];
+        placeholders.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = "—";
+        });
+        spreadOutput.style.color = "var(--muted)";
+        dealScoreOutput.textContent = "—";
+        dealScoreOutput.style.color = "var(--muted)";
+        dealScoreResult.style.borderColor = "var(--line)";
+        dealVerdictOutput.textContent = "Enter an asking price to score this deal";
+        return;
+      }
       const sqft = parseCommaNumber(sqftInput.value) || 1;
       const yearBuilt = Number(yearBuiltInput.value) || 0;
       const holdingPeriod = Number(holdingPeriodInput.value) || 1;
@@ -1441,9 +1644,12 @@
       const dscr = debtService > 0 ? noi / debtService : 0;
       const debtYield = loanAmount > 0 ? (noi / loanAmount) * 100 : 0;
       const cumulativeNoi = noi * holdingPeriod;
-      const irr = price > 0
-        ? ((exitValue - price + cumulativeNoi) / price) / holdingPeriod * 100
-        : 0;
+      const cashFlows = [-price];
+      for (let t = 1; t < holdingPeriod; t++) {
+        cashFlows.push(noi * Math.pow(1 + noiGrowthRate, t));
+      }
+      cashFlows.push(noi * Math.pow(1 + noiGrowthRate, holdingPeriod) + exitValue);
+      const irr = price > 0 ? computeIRR(cashFlows) : 0;
       const pricePerSf = sqft > 0 ? price / sqft : 0;
       const noiPerSf = sqft > 0 ? noi / sqft : 0;
 
@@ -1544,9 +1750,12 @@
       const loanAmount = price * 0.65;
       const debtService = loanAmount * 0.072;
       const dscr = debtService > 0 ? noi / debtService : 0;
-      const irr = price > 0
-        ? ((exitValue - price + noi * holdingPeriod) / price) / holdingPeriod * 100
-        : 0;
+      const rowCashFlows = [-price];
+      for (let t = 1; t < holdingPeriod; t++) {
+        rowCashFlows.push(noi * Math.pow(1 + noiGrowthRate, t));
+      }
+      rowCashFlows.push(noi * Math.pow(1 + noiGrowthRate, holdingPeriod) + exitValue);
+      const irr = price > 0 ? computeIRR(rowCashFlows) : 0;
 
       const rawScore = computeDealScore({
         assetType,
