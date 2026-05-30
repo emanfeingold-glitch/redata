@@ -1297,6 +1297,10 @@
             </div>
           </div>
 
+          <p id="rateStatusBar" style="margin: 0 0 14px; font-size: 0.78rem; font-weight: 700; color: var(--muted);">
+            Loading live rates…
+          </p>
+
           <!-- Tier 2: Debt & Structure -->
           <p class="results-tier-label">Debt &amp; structure</p>
           <div class="estimate secondary-estimate" aria-live="polite">
@@ -1426,6 +1430,78 @@
   <script>
     // TODO: Replace with your Google OAuth 2.0 client ID from console.cloud.google.com
     const GOOGLE_CLIENT_ID = "";
+    const FRED_API_KEY = "0562eef495aec2f5a50f09876e0c81da";
+
+    async function fetchFredRate(seriesId) {
+      const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&api_key=${FRED_API_KEY}&sort_order=desc&limit=1&file_type=json`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`FRED fetch failed for ${seriesId}`);
+      const data = await response.json();
+      const value = parseFloat(data.observations[0].value);
+      if (isNaN(value)) throw new Error(`FRED returned invalid value for ${seriesId}`);
+      return value;
+    }
+
+    function computeLiveDebtConstant(annualRatePct, amortYears) {
+      // Standard mortgage constant: monthly payment * 12 / loan amount
+      const monthlyRate = annualRatePct / 100 / 12;
+      const n = amortYears * 12;
+      if (monthlyRate === 0) return 1 / amortYears;
+      const monthly = monthlyRate / (1 - Math.pow(1 + monthlyRate, -n));
+      return monthly * 12;
+    }
+
+    // Live rate state — populated by initFredRates() on page load
+    const liveRates = {
+      loaded: false,
+      sofr: null,
+      tenYr: null,
+      debtConstants: {}
+    };
+
+    async function initFredRates() {
+      try {
+        const [sofr, tenYr] = await Promise.all([
+          fetchFredRate("SOFR"),
+          fetchFredRate("DGS10")
+        ]);
+
+        liveRates.sofr = sofr;
+        liveRates.tenYr = tenYr;
+
+        // Spreads over benchmark, by asset type (basis points converted to decimal)
+        // Multifamily uses agency/SOFR-based financing; others use fixed/treasury-based
+        liveRates.debtConstants = {
+          "Multifamily": computeLiveDebtConstant(sofr + 1.50, 30),
+          "Industrial": computeLiveDebtConstant(tenYr + 2.00, 25),
+          "Office": computeLiveDebtConstant(tenYr + 2.75, 25),
+          "Retail": computeLiveDebtConstant(tenYr + 2.75, 25),
+          "Medical Office": computeLiveDebtConstant(tenYr + 2.25, 25),
+          "Self-Storage": computeLiveDebtConstant(tenYr + 2.25, 25),
+          "Data Center": computeLiveDebtConstant(tenYr + 2.00, 25)
+        };
+
+        liveRates.loaded = true;
+        updateDealPreview();
+        updateRateStatusUI(sofr, tenYr);
+      } catch (err) {
+        // Silently fall back to hardcoded constants — model still works
+        console.warn("FRED rate fetch failed, using hardcoded defaults:", err.message);
+        updateRateStatusUI(null, null);
+      }
+    }
+
+    function updateRateStatusUI(sofr, tenYr) {
+      const el = document.getElementById("rateStatusBar");
+      if (!el) return;
+      if (sofr === null) {
+        el.textContent = "Debt assumptions: using baseline defaults";
+        el.style.color = "var(--muted)";
+      } else {
+        el.textContent = `Live rates loaded — SOFR ${sofr.toFixed(2)}% · 10-Yr Treasury ${tenYr.toFixed(2)}%`;
+        el.style.color = "var(--brand-dark)";
+      }
+    }
 
     const assetTypeInput = document.querySelector("#assetType");
     const priceInput = document.querySelector("#price");
@@ -1549,12 +1625,15 @@
         "Data Center": { ltv: 0.60, debtConstant: 0.070, noiGrowthRate: 0.040, exitCapExpansion: 0.25 }
       };
 
-      return assumptionsByAssetType[assetType] || {
-        ltv: 0.65,
-        debtConstant: 0.072,
-        noiGrowthRate: 0.025,
-        exitCapExpansion: 0.35
+      const base = assumptionsByAssetType[assetType] || {
+        ltv: 0.65, debtConstant: 0.072, noiGrowthRate: 0.025, exitCapExpansion: 0.35
       };
+
+      if (liveRates.loaded && liveRates.debtConstants[assetType]) {
+        return { ...base, debtConstant: liveRates.debtConstants[assetType] };
+      }
+
+      return base;
     }
 
     function getCapRateAdjustment(assetType) {
@@ -1862,6 +1941,8 @@
       debtServiceOutput.textContent = money.format(debtService);
       noiOutput.textContent = money.format(noi);
       document.querySelector("#exitNoiOutput").textContent = money.format(exitNoi);
+      const exitNoiNote = document.querySelector("#exitNoiOutput + .metric-note");
+      if (exitNoiNote) exitNoiNote.textContent = `Grown at ${(noiGrowthRate * 100).toFixed(1)}% annually`;
       document.querySelector("#pricePerSfOutput").textContent =
         `$${pricePerSf.toFixed(0)}/SF`;
       document.querySelector("#noiPerSfOutput").textContent =
@@ -2295,6 +2376,7 @@
     };
 
     buildSensitivityTable();
+    initFredRates();
   </script>
 </body>
 </html>
