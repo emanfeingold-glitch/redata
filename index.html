@@ -827,6 +827,60 @@
       color: var(--muted);
     }
 
+    .score-breakdown {
+      display: none;
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .score-breakdown.is-active {
+      display: grid;
+      gap: 14px;
+    }
+
+    .score-breakdown-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .score-breakdown-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .score-breakdown-value {
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .score-breakdown-track {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--line);
+    }
+
+    .score-breakdown-fill {
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .score-breakdown-rationale {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+
     .secondary-estimate {
       display: grid;
       margin-top: 12px;
@@ -846,6 +900,13 @@
     .export-btn {
       margin-top: 20px;
       width: 100%;
+    }
+
+    .export-btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
     }
 
     @media print {
@@ -992,6 +1053,12 @@
       border-color: rgba(255,255,255,0.5);
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Google API client for Sheets export -->
+  <script src="https://apis.google.com/js/api.js" async defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -1277,11 +1344,14 @@
             <span>Deal Score</span>
             <strong id="dealScoreOutput">0</strong>
             <p id="dealVerdictOutput">Enter assumptions to score the deal</p>
+            <div class="score-breakdown" id="scoreBreakdown"></div>
           </div>
 
-          <button type="button" class="btn btn-primary export-btn" id="exportBtn">
-            Export Results
-          </button>
+          <div class="export-btn-group">
+            <button type="button" class="btn btn-primary export-btn" id="exportBtn">Export PDF</button>
+            <button type="button" class="btn btn-secondary" id="exportXlsxBtn">Export Excel</button>
+            <button type="button" class="btn btn-secondary" id="exportSheetsBtn">Export to Sheets</button>
+          </div>
 
           <div class="sensitivity-section" id="sensitivitySection">
             <div class="sensitivity-header">
@@ -1354,6 +1424,9 @@
   </script>
 
   <script>
+    // TODO: Replace with your Google OAuth 2.0 client ID from console.cloud.google.com
+    const GOOGLE_CLIENT_ID = "";
+
     const assetTypeInput = document.querySelector("#assetType");
     const priceInput = document.querySelector("#price");
     const sqftInput = document.querySelector("#sqft");
@@ -1370,6 +1443,7 @@
     const dealScoreResult = document.querySelector("#dealScoreResult");
     const dealScoreOutput = document.querySelector("#dealScoreOutput");
     const dealVerdictOutput = document.querySelector("#dealVerdictOutput");
+    const scoreBreakdown = document.querySelector("#scoreBreakdown");
 
     function formatWithCommas(value) {
       const num = parseInt(value.toString().replace(/,/g, ""), 10);
@@ -1457,6 +1531,30 @@
       }
 
       return 10;
+    }
+
+    function getAssetAssumptions(assetType) {
+      // Returns: { ltv, debtConstant, noiGrowthRate, exitCapExpansion }
+      // ltv: loan-to-value ratio as decimal
+      // debtConstant: annual debt service as decimal fraction of loan amount
+      // noiGrowthRate: annual NOI growth rate as decimal
+      // exitCapExpansion: basis point expansion added to going-in cap rate at exit (as decimal pct, e.g. 0.35 = 35bps)
+      const assumptionsByAssetType = {
+        "Multifamily": { ltv: 0.70, debtConstant: 0.068, noiGrowthRate: 0.030, exitCapExpansion: 0.25 },
+        "Industrial": { ltv: 0.65, debtConstant: 0.072, noiGrowthRate: 0.025, exitCapExpansion: 0.25 },
+        "Office": { ltv: 0.60, debtConstant: 0.075, noiGrowthRate: 0.020, exitCapExpansion: 0.50 },
+        "Retail": { ltv: 0.60, debtConstant: 0.075, noiGrowthRate: 0.020, exitCapExpansion: 0.50 },
+        "Medical Office": { ltv: 0.65, debtConstant: 0.071, noiGrowthRate: 0.025, exitCapExpansion: 0.35 },
+        "Self-Storage": { ltv: 0.65, debtConstant: 0.072, noiGrowthRate: 0.035, exitCapExpansion: 0.35 },
+        "Data Center": { ltv: 0.60, debtConstant: 0.070, noiGrowthRate: 0.040, exitCapExpansion: 0.25 }
+      };
+
+      return assumptionsByAssetType[assetType] || {
+        ltv: 0.65,
+        debtConstant: 0.072,
+        noiGrowthRate: 0.025,
+        exitCapExpansion: 0.35
+      };
     }
 
     function getCapRateAdjustment(assetType) {
@@ -1563,7 +1661,83 @@
         + scoreIrr(metrics.irrPercent);
     }
 
-    function updateScoreDisplay(score) {
+    function getScoreBarColor(subScore) {
+      if (subScore === 25) return "var(--brand)";
+      if (subScore === 18) return "var(--accent)";
+      return "var(--muted)";
+    }
+
+    function describeScoreBreakdown(metrics, subScores) {
+      const capTarget = 6 + getCapRateAdjustment(metrics.assetType);
+      const capPosition = metrics.capRatePercent >= capTarget + 0.75
+        ? "above target"
+        : metrics.capRatePercent >= capTarget - 0.5
+          ? "near target"
+          : "below target";
+      const irrPosition = metrics.irrPercent >= 12
+        ? "exceeds"
+        : metrics.irrPercent >= 9
+          ? "approaches"
+          : "falls short of";
+      const dscrPosition = metrics.dscr >= 1.4
+        ? "provides strong"
+        : metrics.dscr >= 1.1
+          ? "adequate"
+          : "thin";
+      const spreadPosition = metrics.spreadPercent >= 0
+        ? "supports"
+        : "does not support";
+
+      return [
+        {
+          label: "Market Momentum",
+          score: subScores.capRate,
+          rationale: `Cap rate of ${metrics.capRatePercent.toFixed(1)}% is ${capPosition} for ${metrics.assetType}`
+        },
+        {
+          label: "Tenant Rollover Risk",
+          score: subScores.irr,
+          rationale: `IRR of ${metrics.irrPercent.toFixed(1)}% ${irrPosition} the 12% return threshold`
+        },
+        {
+          label: "Capital Plan Sensitivity",
+          score: subScores.dscr,
+          rationale: `DSCR of ${metrics.dscr.toFixed(2)} ${dscrPosition} debt service coverage`
+        },
+        {
+          label: "Comparable Sale Support",
+          score: subScores.valueSpread,
+          rationale: `Value spread of ${metrics.spreadPercent >= 0 ? "+" : ""}${metrics.spreadPercent.toFixed(1)}% ${spreadPosition} exit pricing assumptions`
+        }
+      ];
+    }
+
+    function renderScoreBreakdown(metrics, subScores) {
+      if (!scoreBreakdown || !metrics || metrics.price <= 0) {
+        if (scoreBreakdown) {
+          scoreBreakdown.classList.remove("is-active");
+          scoreBreakdown.innerHTML = "";
+        }
+        return;
+      }
+
+      const rows = describeScoreBreakdown(metrics, subScores);
+      scoreBreakdown.innerHTML = rows.map((row) => `
+        <div class="score-breakdown-row">
+          <div class="score-breakdown-top">
+            <span>${row.label}</span>
+            <span class="score-breakdown-value">${row.score}/25</span>
+          </div>
+          <div class="score-breakdown-track" aria-hidden="true">
+            <div class="score-breakdown-fill" style="width: ${(row.score / 25) * 100}%; background: ${getScoreBarColor(row.score)};"></div>
+          </div>
+          <p class="score-breakdown-rationale">${row.rationale}</p>
+        </div>
+      `).join("");
+      scoreBreakdown.classList.add("is-active");
+    }
+
+    function updateScoreDisplay(score, breakdownMetrics, subScores) {
       let color = "#9f342f";
       let verdict = "Deal does not meet return thresholds";
 
@@ -1579,6 +1753,7 @@
       dealScoreOutput.style.color = color;
       dealScoreResult.style.borderColor = color;
       dealVerdictOutput.textContent = verdict;
+      renderScoreBreakdown(breakdownMetrics, subScores);
     }
 
     function computeIRR(cashFlows) {
@@ -1599,6 +1774,7 @@
     function updateDealPreview() {
       const assetType = assetTypeInput.value;
       const price = parseCommaNumber(priceInput.value) || 0;
+      const assumptions = getAssetAssumptions(assetType);
       if (price === 0) {
         const placeholders = [
           "irrOutput2", "goingInCapRateOutput", "exitCapRateOutput",
@@ -1615,12 +1791,12 @@
         dealScoreOutput.style.color = "var(--muted)";
         dealScoreResult.style.borderColor = "var(--line)";
         dealVerdictOutput.textContent = "Enter an asking price to score this deal";
+        renderScoreBreakdown(null, null);
         return;
       }
       const sqft = parseCommaNumber(sqftInput.value) || 1;
-      const yearBuilt = Number(yearBuiltInput.value) || 0;
       const holdingPeriod = Number(holdingPeriodInput.value) || 1;
-      const noiGrowthRate = 0.025;
+      const noiGrowthRate = assumptions.noiGrowthRate; // asset-specific
       const advertisedNoi = Number(advertisedNoiInput.value);
       const advertisedCapRatePct = Number(advertisedCapRateInput.value);
       const estimatedCapRate = getEstimatedCapRate(assetType);
@@ -1635,13 +1811,13 @@
       }
 
       const goingInCapRatePct = price > 0 ? (noi / price) * 100 : 0;
-      const exitCapRatePct = goingInCapRatePct + 0.35;
+      const exitCapRatePct = goingInCapRatePct + assumptions.exitCapExpansion; // asset-specific
       const exitNoi = noi * Math.pow(1 + noiGrowthRate, holdingPeriod);
       const exitValue = exitCapRatePct > 0 ? exitNoi / (exitCapRatePct / 100) : 0;
       const valueSpread = exitValue - price;
       const valueSpreadPct = price > 0 ? (valueSpread / price) * 100 : -100;
-      const loanAmount = price * 0.65;
-      const debtService = loanAmount * 0.072;
+      const loanAmount = price * assumptions.ltv; // asset-specific
+      const debtService = loanAmount * assumptions.debtConstant; // asset-specific
       const dscr = debtService > 0 ? noi / debtService : 0;
       const debtYield = loanAmount > 0 ? (noi / loanAmount) * 100 : 0;
       const cumulativeNoi = noi * holdingPeriod;
@@ -1654,15 +1830,20 @@
       const pricePerSf = sqft > 0 ? price / sqft : 0;
       const noiPerSf = sqft > 0 ? noi / sqft : 0;
 
-      const rawScore = computeDealScore({
+      const scoreMetrics = {
         assetType,
         capRatePercent: goingInCapRatePct,
         dscr,
         spreadPercent: valueSpreadPct,
         irrPercent: irr
-      });
-      const yearBuiltPenalty = getYearBuiltPenalty(yearBuilt);
-      const adjustedScore = Math.max(0, rawScore - yearBuiltPenalty);
+      };
+      const subScores = {
+        capRate: scoreCapRate(scoreMetrics.capRatePercent, scoreMetrics.assetType),
+        irr: scoreIrr(scoreMetrics.irrPercent),
+        dscr: scoreDscr(scoreMetrics.dscr),
+        valueSpread: scoreValueSpread(scoreMetrics.spreadPercent)
+      };
+      const rawScore = computeDealScore(scoreMetrics);
 
       document.querySelector("#irrOutput2").textContent = `${irr.toFixed(1)}%`;
       document.querySelector("#goingInCapRateOutput").textContent =
@@ -1685,7 +1866,10 @@
         `$${pricePerSf.toFixed(0)}/SF`;
       document.querySelector("#noiPerSfOutput").textContent =
         `$${noiPerSf.toFixed(2)}/SF`;
-      updateScoreDisplay(adjustedScore);
+      const yearBuilt = Number(yearBuiltInput.value) || 0;
+      const yearBuiltPenalty = getYearBuiltPenalty(yearBuilt);
+      const adjustedScore = Math.max(0, rawScore - yearBuiltPenalty);
+      updateScoreDisplay(adjustedScore, { ...scoreMetrics, price }, subScores);
     }
 
     [
@@ -1703,9 +1887,268 @@
 
     updateDealPreview();
 
-    document.getElementById('exportBtn').addEventListener('click', function() {
-      window.print();
-    });
+    function getOutputText(id) {
+      const el = document.getElementById(id);
+      return el ? el.textContent.trim() : "";
+    }
+
+    function addPdfSection(doc, title, rows, startY) {
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(14, 74, 54);
+      doc.text(title, 36, startY);
+      doc.autoTable({
+        startY: startY + 4,
+        body: rows,
+        theme: "grid",
+        margin: { left: 36, right: 36 },
+        tableWidth: "auto",
+        styles: {
+          fontSize: 7.6,
+          cellPadding: 2.4,
+          lineColor: [208, 219, 214],
+          lineWidth: 0.4,
+          textColor: [15, 26, 22],
+          overflow: "linebreak"
+        },
+        columnStyles: {
+          0: { fontStyle: "bold", textColor: [82, 107, 97], cellWidth: 105 },
+          1: { halign: "right" }
+        },
+        pageBreak: "avoid"
+      });
+      return doc.lastAutoTable.finalY + 10;
+    }
+
+    function getExportRows() {
+      return [
+        ["RETURN SUMMARY", ""],
+        ["IRR", getOutputText("irrOutput2")],
+        ["Exit Value", getOutputText("exitValueOutput")],
+        ["Value Spread", getOutputText("spreadOutput")],
+        ["", ""],
+        ["DEBT & STRUCTURE", ""],
+        ["DSCR", getOutputText("dscrOutput")],
+        ["Debt Yield", getOutputText("debtYieldOutput")],
+        ["Est. Loan Amount", getOutputText("loanAmountOutput")],
+        ["Est. Debt Service", getOutputText("debtServiceOutput")],
+        ["", ""],
+        ["PROPERTY INTELLIGENCE", ""],
+        ["NOI", getOutputText("noiOutput")],
+        ["Exit NOI", getOutputText("exitNoiOutput")],
+        ["Price/SF", getOutputText("pricePerSfOutput")],
+        ["NOI/SF", getOutputText("noiPerSfOutput")],
+        ["Going-In Cap Rate", getOutputText("goingInCapRateOutput")],
+        ["Exit Cap Rate", getOutputText("exitCapRateOutput")],
+        ["", ""],
+        ["DEAL SCORE", ""],
+        ["Score", getOutputText("dealScoreOutput")],
+        ["Verdict", getOutputText("dealVerdictOutput")]
+      ];
+    }
+
+    function getExportFileParts() {
+      const assetType = assetTypeInput.value || "Asset";
+      const priceText = priceInput.value || "0";
+      return {
+        assetType,
+        priceText,
+        fileAssetType: assetType.replace(/[^a-z0-9]+/gi, ""),
+        filePrice: priceText.replace(/[^0-9]+/g, "") || "0"
+      };
+    }
+
+    function exportDealExcel() {
+      if (!window.XLSX) {
+        alert("Excel export is still loading. Please try again in a moment.");
+        return;
+      }
+
+      const rows = getExportRows();
+      const worksheet = {};
+      XLSX.utils.sheet_add_aoa(worksheet, rows, { origin: "A1" });
+      worksheet["!cols"] = [{ wch: 28 }, { wch: 18 }];
+
+      rows.forEach((row, index) => {
+        if (row[0] && row[1] === "") {
+          ["A", "B"].forEach((column) => {
+            const cell = worksheet[`${column}${index + 1}`];
+            if (cell) {
+              cell.s = {
+                fill: { fgColor: { rgb: "1A6B50" } },
+                font: { color: { rgb: "FFFFFF" }, bold: true }
+              };
+            }
+          });
+        }
+      });
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Deal Analysis");
+
+      const { fileAssetType, filePrice } = getExportFileParts();
+      XLSX.writeFile(workbook, `REDATA_${fileAssetType}_${filePrice}.xlsx`);
+    }
+
+    function loadGapiClient() {
+      return new Promise((resolve, reject) => {
+        if (!window.gapi) {
+          reject(new Error("Google API client is still loading. Please try again in a moment."));
+          return;
+        }
+
+        window.gapi.load("client:auth2", {
+          callback: resolve,
+          onerror: () => reject(new Error("Google API client failed to load.")),
+          timeout: 10000,
+          ontimeout: () => reject(new Error("Google API client timed out while loading."))
+        });
+      });
+    }
+
+    async function exportToSheets() {
+      if (!GOOGLE_CLIENT_ID) {
+        alert("Google Sheets export requires a Google OAuth Client ID. See the GOOGLE_CLIENT_ID constant in the script.");
+        return;
+      }
+
+      try {
+        await loadGapiClient();
+        await gapi.client.init({
+          clientId: GOOGLE_CLIENT_ID,
+          scope: "https://www.googleapis.com/auth/spreadsheets"
+        });
+
+        const authInstance = gapi.auth2.getAuthInstance();
+        if (!authInstance.isSignedIn.get()) {
+          await authInstance.signIn();
+        }
+
+        const { assetType, priceText } = getExportFileParts();
+        const createResponse = await gapi.client.request({
+          path: "https://sheets.googleapis.com/v4/spreadsheets",
+          method: "POST",
+          body: {
+            properties: {
+              title: `REDATA \u2014 ${assetType} \u2014 ${priceText}`
+            }
+          }
+        });
+
+        const spreadsheetId = createResponse.result.spreadsheetId;
+        await gapi.client.request({
+          path: `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`,
+          method: "POST",
+          body: {
+            valueInputOption: "USER_ENTERED",
+            data: [
+              {
+                range: "Sheet1!A1",
+                values: getExportRows()
+              }
+            ]
+          }
+        });
+
+        window.open(`https://docs.google.com/spreadsheets/d/${spreadsheetId}`, "_blank");
+      } catch (error) {
+        alert(error && error.message ? error.message : "Google Sheets export could not be completed.");
+      }
+    }
+
+    function exportDealPdf() {
+      if (!window.jspdf || !window.jspdf.jsPDF || !document.getElementById("exportBtn")) {
+        alert("PDF export is still loading. Please try again in a moment.");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
+      const assetType = assetTypeInput.value || "Asset";
+      const priceText = priceInput.value || "0";
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const brandGreen = [26, 107, 80];
+
+      doc.setFillColor(...brandGreen);
+      doc.rect(0, 0, pageWidth, 68, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(17);
+      doc.text("REDATA — Deal Analysis", 36, 31);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.text(`${assetType} | Asking Price: $${priceText}`, 36, 50);
+
+      let y = 86;
+      y = addPdfSection(doc, "Return Summary", [
+        ["IRR", getOutputText("irrOutput2")],
+        ["Exit Value", getOutputText("exitValueOutput")],
+        ["Value Spread", getOutputText("spreadOutput")]
+      ], y);
+
+      y = addPdfSection(doc, "Debt & Structure", [
+        ["DSCR", getOutputText("dscrOutput")],
+        ["Debt Yield", getOutputText("debtYieldOutput")],
+        ["Est. Loan Amount", getOutputText("loanAmountOutput")],
+        ["Est. Debt Service", getOutputText("debtServiceOutput")]
+      ], y);
+
+      y = addPdfSection(doc, "Property Intelligence", [
+        ["NOI", getOutputText("noiOutput")],
+        ["Exit NOI", getOutputText("exitNoiOutput")],
+        ["Price/SF", getOutputText("pricePerSfOutput")],
+        ["NOI/SF", getOutputText("noiPerSfOutput")],
+        ["Going-In Cap Rate", getOutputText("goingInCapRateOutput")],
+        ["Exit Cap Rate", getOutputText("exitCapRateOutput")]
+      ], y);
+
+      y = addPdfSection(doc, "Deal Score", [
+        ["Score", `${getOutputText("dealScoreOutput")} - ${getOutputText("dealVerdictOutput")}`]
+      ], y);
+
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(14, 74, 54);
+      doc.text("Sensitivity Table", 36, y);
+
+      const sensitivityRows = Array.from(sensitivityBody.querySelectorAll("tr")).map((tr) =>
+        Array.from(tr.querySelectorAll("td")).map((td) => td.textContent.trim())
+      );
+      doc.autoTable({
+        startY: y + 4,
+        head: [[
+          sensitivityColHeader.textContent.trim(),
+          "Cap Rate",
+          "IRR",
+          "DSCR",
+          "Score"
+        ]],
+        body: sensitivityRows,
+        theme: "grid",
+        margin: { left: 36, right: 36 },
+        styles: {
+          fontSize: 7.1,
+          cellPadding: 2.2,
+          lineColor: [208, 219, 214],
+          lineWidth: 0.4,
+          textColor: [15, 26, 22]
+        },
+        headStyles: {
+          fillColor: brandGreen,
+          textColor: [255, 255, 255],
+          fontStyle: "bold"
+        },
+        pageBreak: "avoid"
+      });
+
+      const fileAssetType = assetType.replace(/[^a-z0-9]+/gi, "");
+      const filePrice = priceText.replace(/[^0-9]+/g, "") || "0";
+      doc.save(`REDATA_${fileAssetType}_${filePrice}.pdf`);
+    }
+
+    document.getElementById('exportBtn').addEventListener('click', exportDealPdf);
+    document.getElementById("exportXlsxBtn").addEventListener("click", exportDealExcel);
+    document.getElementById("exportSheetsBtn").addEventListener("click", exportToSheets);
 
     const sensitivityVariable = document.getElementById("sensitivityVariable");
     const sensitivityBody = document.getElementById("sensitivityBody");
@@ -1722,7 +2165,8 @@
       const basePrice = parseCommaNumber(priceInput.value) || 0;
       const yearBuilt = Number(yearBuiltInput.value) || 0;
       const baseHoldingPeriod = Number(holdingPeriodInput.value) || 1;
-      const noiGrowthRate = 0.025;
+      const assumptions = getAssetAssumptions(assetType);
+      const noiGrowthRate = assumptions.noiGrowthRate; // asset-specific
 
       const advertisedNoi = Number(advertisedNoiInput.value);
       const advertisedCapRatePct = Number(advertisedCapRateInput.value);
@@ -1743,13 +2187,13 @@
       }
 
       const goingInCapRatePct = price > 0 ? (noi / price) * 100 : 0;
-      const exitCapRatePct = goingInCapRatePct + 0.35;
+      const exitCapRatePct = goingInCapRatePct + assumptions.exitCapExpansion; // asset-specific
       const exitNoi = noi * Math.pow(1 + noiGrowthRate, holdingPeriod);
       const exitValue = exitCapRatePct > 0 ? exitNoi / (exitCapRatePct / 100) : 0;
       const valueSpread = exitValue - price;
       const valueSpreadPct = price > 0 ? (valueSpread / price) * 100 : -100;
-      const loanAmount = price * 0.65;
-      const debtService = loanAmount * 0.072;
+      const loanAmount = price * assumptions.ltv; // asset-specific
+      const debtService = loanAmount * assumptions.debtConstant; // asset-specific
       const dscr = debtService > 0 ? noi / debtService : 0;
       const rowCashFlows = [-price];
       for (let t = 1; t < holdingPeriod; t++) {
@@ -1786,6 +2230,12 @@
       let formatLabel;
 
       if (variable === "price") {
+        if (basePrice === 0) {
+          document.getElementById("sensitivityCapNote").style.display = "none";
+          sensitivityColHeader.textContent = "Asking Price";
+          sensitivityBody.innerHTML = "";
+          return;
+        }
         currentValue = basePrice;
         const step = Math.max(100000, Math.round(basePrice * 0.06 / 100000) * 100000) || 1000000;
         for (let i = -3; i <= 3; i++) {
@@ -1819,7 +2269,7 @@
           ? val === currentValue
           : variable === "price"
             ? Math.abs(val - currentValue) === Math.min(...steps.map(s => Math.abs(s - currentValue)))
-            : Math.abs(val - currentValue) < 0.001;
+            : Math.abs(val - currentValue) < 0.01;
 
         const pillClass = getScorePillClass(metrics.score);
         const tr = document.createElement("tr");
