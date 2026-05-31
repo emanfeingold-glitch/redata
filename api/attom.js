@@ -38,15 +38,33 @@ function toNumber(value) {
 function processComps(properties) {
   const propertyList = Array.isArray(properties) ? properties : [];
   const commercialProperties = propertyList.filter((p) => {
-    const subtype = p?.summary?.propsubtype?.toLowerCase() ?? "";
-    const propclass = p?.summary?.propclass?.toLowerCase() ?? "";
-    const proptype = p?.summary?.proptype?.toLowerCase() ?? "";
-    return (
-      subtype !== "residential" &&
-      propclass !== "vacant" &&
-      !proptype.includes("residential") &&
-      !proptype.includes("vacant land")
-    );
+    const proptype = (p?.summary?.proptype ?? "").toLowerCase();
+    const propLandUse = (p?.summary?.propLandUse ?? "").toLowerCase();
+
+    // Block single-family, vacant land, condos, and other non-investment residential
+    const blocked = [
+      "single family", "sfr", "vacant land", "condominium",
+      "townhouse", "mobile home", "timeshare"
+    ];
+    if (blocked.some((term) => proptype.includes(term) || propLandUse.includes(term))) return false;
+
+    // Allow anything with a building size (filters out true vacant land)
+    const hasSqft = (
+      p?.building?.size?.universalsize ||
+      p?.building?.size?.grosssize ||
+      p?.building?.size?.livingsize
+    ) > 0;
+
+    // Allow all CRE asset types including multifamily, medical, and data center
+    const isCommercial = [
+      "multi", "apartment", "commercial", "industrial",
+      "office", "retail", "mixed", "medical", "warehouse",
+      "storage", "healthcare", "clinic", "outpatient",
+      "special purpose", "technology", "flex", "data",
+      "laboratory", "net lease"
+    ].some((term) => proptype.includes(term) || propLandUse.includes(term));
+
+    return isCommercial || hasSqft;
   });
 
   return commercialProperties
