@@ -112,7 +112,8 @@ export default async function handler(req, res) {
     }
 
     const attomData = await attomRes.json();
-    console.log(`ATTOM radius ${radius} response:`, JSON.stringify(attomData).slice(0, 500));
+    console.log(`ATTOM radius ${radius} total:`, attomData?.status?.total);
+    console.log(`ATTOM first property:`, JSON.stringify(attomData?.property?.[0], null, 2));
     const properties = attomData?.property ?? [];
     const validComps = processComps(properties);
 
