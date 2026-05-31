@@ -128,6 +128,7 @@ export default async function handler(req, res) {
     attomUrl.searchParams.set("address1", address1);
     attomUrl.searchParams.set("address2", address2);
     attomUrl.searchParams.set("radius", radius);
+    attomUrl.searchParams.set("pagesize", "50");
     attomUrl.searchParams.set("startsalesearchdate", startDate);
     attomUrl.searchParams.set("endsalesearchdate", endDate);
 
