@@ -15,7 +15,7 @@ function subtractMonths(date, months) {
   return result;
 }
 
-function getMedian(values) {
+function computeMedian(values) {
   if (values.length === 0) {
     return null;
   }
@@ -33,6 +33,32 @@ function getMedian(values) {
 function toNumber(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
+}
+
+function processComps(properties) {
+  const propertyList = Array.isArray(properties) ? properties : [];
+
+  return propertyList
+    .map((property) => {
+      const saleAmt = toNumber(property?.sale?.saleamt);
+      const sqft = toNumber(property?.building?.size?.universalsize);
+
+      if (saleAmt <= 0 || sqft <= 0) {
+        return null;
+      }
+
+      return {
+        address: property?.address?.line1 ?? "",
+        saleDate: property?.sale?.salesearchdate ?? "",
+        saleAmt,
+        sqft,
+        pricePerSqft: saleAmt / sqft,
+        propType: property?.summary?.proptype ?? "",
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => new Date(b.saleDate) - new Date(a.saleDate))
+    .slice(0, 10);
 }
 
 export default async function handler(req, res) {
@@ -58,65 +84,56 @@ export default async function handler(req, res) {
   const today = new Date();
   const endDate = formatDate(today);
   const startDate = formatDate(subtractMonths(today, 18));
-  const url = new URL("https://api.gateway.attomdata.com/propertyapi/v1.0.0/sale/snapshot");
 
-  url.searchParams.set("address1", address1);
-  url.searchParams.set("address2", address2);
-  url.searchParams.set("radius", "1");
-  url.searchParams.set("startsalesearchdate", startDate);
-  url.searchParams.set("endsalesearchdate", endDate);
+  const radii = [1, 3, 5];
+  let lastData = null;
+  let usedRadius = 1;
 
-  const attomResponse = await fetch(url, {
-    headers: {
-      apikey: apiKey,
-      Accept: "application/json",
-    },
-  });
+  for (const radius of radii) {
+    const attomUrl = new URL("https://api.gateway.attomdata.com/propertyapi/v1.0.0/sale/snapshot");
+    attomUrl.searchParams.set("address1", address1);
+    attomUrl.searchParams.set("address2", address2);
+    attomUrl.searchParams.set("radius", radius);
+    attomUrl.searchParams.set("startsalesearchdate", startDate);
+    attomUrl.searchParams.set("endsalesearchdate", endDate);
 
-  if (!attomResponse.ok) {
-    return res.status(502).json({
-      error: "ATTOM API error",
-      status: attomResponse.status,
+    const attomRes = await fetch(attomUrl.toString(), {
+      headers: {
+        apikey: apiKey,
+        Accept: "application/json",
+      },
     });
+
+    if (!attomRes.ok) {
+      return res.status(502).json({
+        error: "ATTOM API error",
+        status: attomRes.status,
+      });
+    }
+
+    const attomData = await attomRes.json();
+    const properties = attomData?.property ?? [];
+    const validComps = processComps(properties);
+
+    lastData = { comps: validComps, radius };
+    usedRadius = radius;
+
+    if (validComps.length > 0) break;
   }
 
-  const data = await attomResponse.json();
-  const properties = Array.isArray(data?.property) ? data.property : [];
-  const validComps = properties
-    .map((property) => {
-      const saleAmt = toNumber(property?.sale?.saleamt);
-      const sqft = toNumber(property?.building?.size?.universalsize);
-
-      if (saleAmt <= 0 || sqft <= 0) {
-        return null;
-      }
-
-      return {
-        address: property?.address?.line1 ?? "",
-        saleDate: property?.sale?.salesearchdate ?? "",
-        saleAmt,
-        sqft,
-        pricePerSqft: saleAmt / sqft,
-        propType: property?.summary?.proptype ?? "",
-      };
-    })
-    .filter(Boolean)
-    .sort((a, b) => new Date(b.saleDate) - new Date(a.saleDate));
-  const comps = validComps.slice(0, 10);
-
-  if (comps.length === 0) {
+  if (!lastData || lastData.comps.length === 0) {
     return res.status(200).json({
       comps: [],
       medianPricePerSqft: null,
       compCount: 0,
-      radiusMiles: 1,
+      radiusMiles: usedRadius,
     });
   }
 
   return res.status(200).json({
-    comps,
-    medianPricePerSqft: getMedian(validComps.map((comp) => comp.pricePerSqft)),
-    compCount: comps.length,
-    radiusMiles: 1,
+    comps: lastData.comps,
+    medianPricePerSqft: computeMedian(lastData.comps.map((comp) => comp.pricePerSqft)),
+    compCount: lastData.comps.length,
+    radiusMiles: usedRadius,
   });
 }

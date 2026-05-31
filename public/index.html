@@ -1551,10 +1551,10 @@
         compsData.comps = data.comps;
 
         if (data.compCount === 0) {
-          statusEl.textContent = "No comps found within 1 mile. Score using model defaults.";
+          statusEl.textContent = "No comps found within 5 miles. Score using model defaults.";
           statusEl.style.color = "var(--muted)";
         } else {
-          statusEl.textContent = `${data.compCount} comp${data.compCount > 1 ? "s" : ""} found - median ${data.medianPricePerSqft ? "$" + data.medianPricePerSqft.toFixed(0) + "/SF" : "N/A"}`;
+          statusEl.textContent = `${data.compCount} comp${data.compCount > 1 ? "s" : ""} found within ${data.radiusMiles} mile${data.radiusMiles > 1 ? "s" : ""} — median ${data.medianPricePerSqft ? "$" + data.medianPricePerSqft.toFixed(0) + "/SF" : "N/A"}`;
           statusEl.style.color = "var(--brand-dark)";
         }
 
