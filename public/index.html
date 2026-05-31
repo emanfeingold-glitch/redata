@@ -1235,6 +1235,19 @@
                 <option>Data Center</option>
               </select>
             </label>
+            <div class="form-section-label">Property Address <span style="font-size:0.7rem; color:var(--muted); font-weight:400;">(optional - enables live comp data)</span></div>
+            <div class="form-group">
+              <label for="addressLine1">Street Address</label>
+              <input type="text" id="addressLine1" placeholder="e.g. 123 Main St" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label for="addressLine2">City, State ZIP</label>
+              <input type="text" id="addressLine2" placeholder="e.g. Miami, FL 33101" autocomplete="off" />
+            </div>
+            <button type="button" class="btn btn-secondary" id="fetchCompsBtn" style="margin-bottom: 18px;">
+              Pull Comp Data
+            </button>
+            <p id="compsStatusBar" style="margin: 0 0 14px; font-size: 0.78rem; font-weight: 700; color: var(--muted);"></p>
             <label>
               Asking Price
               <input id="price" type="text" inputmode="numeric" value="42,600,000"
@@ -1459,6 +1472,14 @@
       debtConstants: {}
     };
 
+    // ATTOM comps state - populated by fetchComps()
+    const compsData = {
+      loaded: false,
+      medianPricePerSqft: null,
+      compCount: 0,
+      comps: []
+    };
+
     async function initFredRates() {
       try {
         const [sofr, tenYr] = await Promise.all([
@@ -1500,6 +1521,47 @@
       } else {
         el.textContent = `Live rates loaded — SOFR ${sofr.toFixed(2)}% · 10-Yr Treasury ${tenYr.toFixed(2)}%`;
         el.style.color = "var(--brand-dark)";
+      }
+    }
+
+    async function fetchComps() {
+      const address1 = document.getElementById("addressLine1").value.trim();
+      const address2 = document.getElementById("addressLine2").value.trim();
+      const statusEl = document.getElementById("compsStatusBar");
+
+      if (!address1 || !address2) {
+        statusEl.textContent = "Please enter both street address and city/state/zip.";
+        statusEl.style.color = "var(--muted)";
+        return;
+      }
+
+      statusEl.textContent = "Fetching comp data...";
+      statusEl.style.color = "var(--muted)";
+
+      try {
+        const params = new URLSearchParams({ address1, address2 });
+        const res = await fetch(`/api/attom?${params}`);
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || "Unknown error");
+
+        compsData.loaded = true;
+        compsData.medianPricePerSqft = data.medianPricePerSqft;
+        compsData.compCount = data.compCount;
+        compsData.comps = data.comps;
+
+        if (data.compCount === 0) {
+          statusEl.textContent = "No comps found within 1 mile. Score using model defaults.";
+          statusEl.style.color = "var(--muted)";
+        } else {
+          statusEl.textContent = `${data.compCount} comp${data.compCount > 1 ? "s" : ""} found - median ${data.medianPricePerSqft ? "$" + data.medianPricePerSqft.toFixed(0) + "/SF" : "N/A"}`;
+          statusEl.style.color = "var(--brand-dark)";
+        }
+
+        updateDealPreview();
+      } catch (err) {
+        statusEl.textContent = `Comp fetch failed: ${err.message}`;
+        statusEl.style.color = "#9f342f";
       }
     }
 
@@ -1701,19 +1763,22 @@
       return 3;
     }
 
-    function scoreValueSpread(spreadPercent) {
-      if (spreadPercent > 15) {
-        return 25;
+    function scoreValueSpread(spreadPercent, pricePerSf) {
+      // If real comp data is available, score against median comp $/SF
+      if (compsData.loaded && compsData.medianPricePerSqft && pricePerSf > 0) {
+        const basisVsMedian = (pricePerSf - compsData.medianPricePerSqft) / compsData.medianPricePerSqft * 100;
+        // Negative = buying below median (good), positive = above median (risk)
+        if (basisVsMedian <= -10) return 25;
+        if (basisVsMedian <= 0) return 20;
+        if (basisVsMedian <= 10) return 14;
+        if (basisVsMedian <= 20) return 8;
+        return 3;
       }
-
-      if (spreadPercent >= 5) {
-        return 18;
-      }
-
-      if (spreadPercent >= 0) {
-        return 10;
-      }
-
+      // Fallback: original math-based scoring
+      if (spreadPercent >= 30) return 25;
+      if (spreadPercent >= 20) return 20;
+      if (spreadPercent >= 10) return 14;
+      if (spreadPercent >= 0) return 8;
       return 3;
     }
 
@@ -1763,9 +1828,17 @@
         : metrics.dscr >= 1.1
           ? "adequate"
           : "thin";
-      const spreadPosition = metrics.spreadPercent >= 0
-        ? "supports"
-        : "does not support";
+      const pricePerSf = metrics.pricePerSf ?? 0;
+      // Comparable Sale Support rationale
+      let compRationale;
+      if (compsData.loaded && compsData.compCount > 0 && pricePerSf > 0) {
+        const diff = ((pricePerSf - compsData.medianPricePerSqft) / compsData.medianPricePerSqft * 100).toFixed(1);
+        const dir = diff <= 0 ? "below" : "above";
+        compRationale = `Basis is ${Math.abs(diff)}% ${dir} median of ${compsData.compCount} comp${compsData.compCount > 1 ? "s" : ""} (${compsData.medianPricePerSqft ? "$" + compsData.medianPricePerSqft.toFixed(0) + "/SF" : "N/A"})`;
+      } else {
+        const spread = metrics.spreadPercent ?? 0;
+        compRationale = `Value spread of ${spread >= 0 ? "+" : ""}${spread.toFixed(1)}% ${spread >= 10 ? "supports" : "does not support"} exit pricing assumptions`;
+      }
 
       return [
         {
@@ -1786,7 +1859,7 @@
         {
           label: "Comparable Sale Support",
           score: subScores.valueSpread,
-          rationale: `Value spread of ${metrics.spreadPercent >= 0 ? "+" : ""}${metrics.spreadPercent.toFixed(1)}% ${spreadPosition} exit pricing assumptions`
+          rationale: compRationale
         }
       ];
     }
@@ -1914,15 +1987,16 @@
         capRatePercent: goingInCapRatePct,
         dscr,
         spreadPercent: valueSpreadPct,
-        irrPercent: irr
+        irrPercent: irr,
+        pricePerSf
       };
       const subScores = {
         capRate: scoreCapRate(scoreMetrics.capRatePercent, scoreMetrics.assetType),
         irr: scoreIrr(scoreMetrics.irrPercent),
         dscr: scoreDscr(scoreMetrics.dscr),
-        valueSpread: scoreValueSpread(scoreMetrics.spreadPercent)
+        valueSpread: scoreValueSpread(scoreMetrics.spreadPercent, pricePerSf)
       };
-      const rawScore = computeDealScore(scoreMetrics);
+      const rawScore = subScores.capRate + subScores.irr + subScores.dscr + subScores.valueSpread;
 
       document.querySelector("#irrOutput2").textContent = `${irr.toFixed(1)}%`;
       document.querySelector("#goingInCapRateOutput").textContent =
@@ -1965,6 +2039,8 @@
       input.addEventListener("input", () => updateDealPreview());
       input.addEventListener("change", () => updateDealPreview());
     });
+
+    document.getElementById("fetchCompsBtn").addEventListener("click", fetchComps);
 
     updateDealPreview();
 
@@ -2283,13 +2359,10 @@
       rowCashFlows.push(noi * Math.pow(1 + noiGrowthRate, holdingPeriod) + exitValue);
       const irr = price > 0 ? computeIRR(rowCashFlows) : 0;
 
-      const rawScore = computeDealScore({
-        assetType,
-        capRatePercent: goingInCapRatePct,
-        dscr,
-        spreadPercent: valueSpreadPct,
-        irrPercent: irr
-      });
+      const rawScore = scoreCapRate(goingInCapRatePct, assetType)
+        + scoreDscr(dscr)
+        + scoreValueSpread(valueSpreadPct, 0)
+        + scoreIrr(irr);
       const penalty = getYearBuiltPenalty(yearBuilt);
       const score = Math.max(0, rawScore - penalty);
 
