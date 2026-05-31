@@ -1296,9 +1296,9 @@
           <p class="results-tier-label">Return summary</p>
           <div class="estimate" aria-live="polite">
             <div>
-              <span>IRR</span>
+              <span>Levered IRR</span>
               <strong id="irrOutput2">—</strong>
-              <small class="metric-note">Simplified estimate</small>
+              <small class="metric-note">On equity after debt service</small>
             </div>
             <div>
               <span>Exit Value</span>
@@ -1698,6 +1698,15 @@
       return base;
     }
 
+    function scaleExitCapExpansion(baseExpansion, holdingPeriod) {
+      // Scale exit cap expansion by holding period relative to a 5-year baseline
+      // Short holds: less exit risk priced in; long holds: more
+      if (holdingPeriod <= 3) return baseExpansion * 0.75;
+      if (holdingPeriod <= 7) return baseExpansion * 1.00;
+      if (holdingPeriod <= 12) return baseExpansion * 1.35;
+      return baseExpansion * 1.60;
+    }
+
     function getCapRateAdjustment(assetType) {
       if (assetType === "Multifamily") {
         return -0.5;
@@ -1799,6 +1808,11 @@
     }
 
     function computeDealScore(metrics) {
+      // scoreValueSpread is intentionally called with one argument here.
+      // This function is only used by computeRowMetrics() for the sensitivity table,
+      // which stress-tests math-based scenarios and should not reference live ATTOM
+      // comp data. The two-argument form (with pricePerSf) is used in updateDealPreview()
+      // where comp data is available and should influence the score.
       return scoreCapRate(metrics.capRatePercent, metrics.assetType)
         + scoreDscr(metrics.dscr)
         + scoreValueSpread(metrics.spreadPercent)
@@ -1963,7 +1977,8 @@
       }
 
       const goingInCapRatePct = price > 0 ? (noi / price) * 100 : 0;
-      const exitCapRatePct = goingInCapRatePct + assumptions.exitCapExpansion; // asset-specific
+      const scaledCapExpansion = scaleExitCapExpansion(assumptions.exitCapExpansion, holdingPeriod);
+      const exitCapRatePct = goingInCapRatePct + scaledCapExpansion; // asset-specific, holding-period-scaled
       const exitNoi = noi * Math.pow(1 + noiGrowthRate, holdingPeriod);
       const exitValue = exitCapRatePct > 0 ? exitNoi / (exitCapRatePct / 100) : 0;
       const valueSpread = exitValue - price;
@@ -1973,12 +1988,16 @@
       const dscr = debtService > 0 ? noi / debtService : 0;
       const debtYield = loanAmount > 0 ? (noi / loanAmount) * 100 : 0;
       const cumulativeNoi = noi * holdingPeriod;
-      const cashFlows = [-price];
+      // Levered IRR - cash flows on equity invested, after debt service
+      const equity = price * (1 - assumptions.ltv);
+      const leveredCashFlows = [-equity];
       for (let t = 1; t < holdingPeriod; t++) {
-        cashFlows.push(noi * Math.pow(1 + noiGrowthRate, t));
+        leveredCashFlows.push(noi * Math.pow(1 + noiGrowthRate, t) - debtService);
       }
-      cashFlows.push(noi * Math.pow(1 + noiGrowthRate, holdingPeriod) + exitValue);
-      const irr = price > 0 ? computeIRR(cashFlows) : 0;
+      leveredCashFlows.push(
+        noi * Math.pow(1 + noiGrowthRate, holdingPeriod) - debtService + (exitValue - loanAmount)
+      );
+      const irr = price > 0 ? computeIRR(leveredCashFlows) : 0;
       const pricePerSf = sqft > 0 ? price / sqft : 0;
       const noiPerSf = sqft > 0 ? noi / sqft : 0;
 
@@ -2003,6 +2022,8 @@
         `${goingInCapRatePct.toFixed(1)}%`;
       document.querySelector("#exitCapRateOutput").textContent =
         `${exitCapRatePct.toFixed(2)}%`;
+      const exitCapNote = document.querySelector("#exitCapRateOutput + .metric-note");
+      if (exitCapNote) exitCapNote.textContent = `+${scaledCapExpansion.toFixed(2)}% expansion (${holdingPeriod}yr hold)`;
       document.querySelector("#exitValueOutput").textContent =
         money.format(exitValue);
       spreadOutput.textContent =
@@ -2344,7 +2365,8 @@
       }
 
       const goingInCapRatePct = price > 0 ? (noi / price) * 100 : 0;
-      const exitCapRatePct = goingInCapRatePct + assumptions.exitCapExpansion; // asset-specific
+      const scaledCapExpansion = scaleExitCapExpansion(assumptions.exitCapExpansion, holdingPeriod);
+      const exitCapRatePct = goingInCapRatePct + scaledCapExpansion; // asset-specific, holding-period-scaled
       const exitNoi = noi * Math.pow(1 + noiGrowthRate, holdingPeriod);
       const exitValue = exitCapRatePct > 0 ? exitNoi / (exitCapRatePct / 100) : 0;
       const valueSpread = exitValue - price;
@@ -2352,12 +2374,16 @@
       const loanAmount = price * assumptions.ltv; // asset-specific
       const debtService = loanAmount * assumptions.debtConstant; // asset-specific
       const dscr = debtService > 0 ? noi / debtService : 0;
-      const rowCashFlows = [-price];
+      // Levered IRR - cash flows on equity invested, after debt service
+      const equity = price * (1 - assumptions.ltv);
+      const leveredCashFlows = [-equity];
       for (let t = 1; t < holdingPeriod; t++) {
-        rowCashFlows.push(noi * Math.pow(1 + noiGrowthRate, t));
+        leveredCashFlows.push(noi * Math.pow(1 + noiGrowthRate, t) - debtService);
       }
-      rowCashFlows.push(noi * Math.pow(1 + noiGrowthRate, holdingPeriod) + exitValue);
-      const irr = price > 0 ? computeIRR(rowCashFlows) : 0;
+      leveredCashFlows.push(
+        noi * Math.pow(1 + noiGrowthRate, holdingPeriod) - debtService + (exitValue - loanAmount)
+      );
+      const irr = price > 0 ? computeIRR(leveredCashFlows) : 0;
 
       const rawScore = scoreCapRate(goingInCapRatePct, assetType)
         + scoreDscr(dscr)
