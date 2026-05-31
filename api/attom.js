@@ -37,11 +37,27 @@ function toNumber(value) {
 
 function processComps(properties) {
   const propertyList = Array.isArray(properties) ? properties : [];
+  const commercialProperties = propertyList.filter((p) => {
+    const subtype = p?.summary?.propsubtype?.toLowerCase() ?? "";
+    const propclass = p?.summary?.propclass?.toLowerCase() ?? "";
+    const proptype = p?.summary?.proptype?.toLowerCase() ?? "";
+    return (
+      subtype !== "residential" &&
+      propclass !== "vacant" &&
+      !proptype.includes("residential") &&
+      !proptype.includes("vacant land")
+    );
+  });
 
-  return propertyList
+  return commercialProperties
     .map((property) => {
-      const saleAmt = toNumber(property?.sale?.saleamt);
-      const sqft = toNumber(property?.building?.size?.universalsize);
+      const saleAmt = toNumber(property?.sale?.amount?.saleamt);
+      const sqft = toNumber(
+        property?.building?.size?.universalsize ||
+        property?.building?.size?.grosssize ||
+        property?.building?.size?.livingsize ||
+        0
+      );
 
       if (saleAmt <= 0 || sqft <= 0) {
         return null;
@@ -112,8 +128,6 @@ export default async function handler(req, res) {
     }
 
     const attomData = await attomRes.json();
-    console.log(`ATTOM radius ${radius} total:`, attomData?.status?.total);
-    console.log(`ATTOM first property:`, JSON.stringify(attomData?.property?.[0], null, 2));
     const properties = attomData?.property ?? [];
     const validComps = processComps(properties);
 
