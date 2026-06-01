@@ -54,6 +54,7 @@
       padding: 18px clamp(20px, 5vw, 72px);
       background: rgba(247, 248, 244, 0.92);
       border-bottom: 1px solid rgba(223, 229, 225, 0.78);
+      -webkit-backdrop-filter: blur(14px);
       backdrop-filter: blur(14px);
       transition: background 0.4s ease, box-shadow 0.4s ease;
     }
@@ -206,7 +207,7 @@
       max-width: 720px;
       margin-bottom: 20px;
       font-size: clamp(3rem, 8vw, 7rem);
-      line-height: 0.92;
+      line-height: 0.95;
       letter-spacing: 0;
     }
 
@@ -249,7 +250,7 @@
     .signal strong {
       display: block;
       margin-bottom: 2px;
-      font-size: 1.4rem;
+      font-size: 1.6rem;
     }
 
     .signal span {
@@ -280,7 +281,7 @@
       max-width: 680px;
       margin-bottom: 0;
       font-size: clamp(2rem, 4vw, 3.6rem);
-      line-height: 1;
+      line-height: 1.05;
       letter-spacing: 0;
     }
 
@@ -297,7 +298,7 @@
       display: grid;
       grid-template-columns: 1.05fr 0.95fr;
       gap: 24px;
-      align-items: stretch;
+      align-items: start;
     }
 
     .analysis-panel {
@@ -427,10 +428,11 @@
     }
 
     .type-card {
-      min-height: 180px;
+      min-height: 200px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      gap: 12px;
       padding: 20px;
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -454,12 +456,22 @@
     }
 
     .model-section {
-      max-width: 1160px;
+      width: 100%;
+      max-width: 1400px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 0.9fr 1.1fr;
-      gap: 42px;
-      align-items: center;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 30px;
+      align-items: stretch;
+      min-width: 0;
+    }
+
+    .model-copy {
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
+      min-width: 0;
     }
 
     .model-copy h2 {
@@ -474,6 +486,9 @@
     }
 
     .model-form {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
       padding: 26px;
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -482,10 +497,20 @@
     }
 
     .form-grid {
+      width: 100%;
+      min-width: 0;
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 14px;
       margin-bottom: 18px;
+    }
+
+    .results-zone {
+      margin-top: 4px;
+      padding: 24px;
+      background: var(--paper);
+      border-radius: 8px;
+      border: 1px solid var(--line);
     }
 
     label {
@@ -516,8 +541,10 @@
     }
 
     .estimate {
+      width: 100%;
+      min-width: 0;
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 10px;
       padding-top: 18px;
       border-top: 1px solid var(--line);
@@ -556,7 +583,24 @@
       margin: 0;
     }
 
+    .site-footer p:nth-child(2) {
+      text-align: center;
+    }
+
+    .status-bar {
+      margin: 0 0 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .fetch-comps-btn {
+      margin-bottom: 18px;
+    }
+
     .cap-rate-comparison {
+      width: 100%;
+      min-width: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -596,7 +640,7 @@
     }
 
     .results-tier-label {
-      margin: 18px 0 6px;
+      margin: 24px 0 8px;
       font-size: 0.74rem;
       font-weight: 800;
       letter-spacing: 0.07em;
@@ -605,9 +649,14 @@
     }
 
     .sensitivity-section {
+      min-width: 0;
       margin-top: 28px;
       padding-top: 24px;
       border-top: 1px solid var(--line);
+    }
+
+    .sensitivity-section .results-tier-label {
+      margin-top: 28px;
     }
 
     .sensitivity-header {
@@ -648,9 +697,65 @@
     }
 
     .sensitivity-table-wrap {
+      width: 100%;
+      min-width: 0;
+      position: relative;
       overflow-x: auto;
       border-radius: 8px;
       border: 1px solid var(--line);
+    }
+
+    .sensitivity-table-wrap::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 32px;
+      height: 100%;
+      background: linear-gradient(to right, transparent, rgba(244, 246, 242, 0.85));
+      pointer-events: none;
+      border-radius: 0 8px 8px 0;
+    }
+
+    @media (min-width: 900px) {
+      .form-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .estimate {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .secondary-estimate {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .cap-rate-item strong {
+        font-size: 2.2rem;
+      }
+
+      #dealScoreOutput {
+        font-size: 5.5rem;
+      }
+
+      #dealVerdictOutput {
+        font-size: 1.05rem;
+        margin-bottom: 4px;
+      }
+
+      .score-breakdown.is-active {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px 32px;
+      }
+
+      .sensitivity-table-wrap::after {
+        display: none;
+      }
+
+      .form-section-label:first-of-type {
+        font-size: 0.84rem;
+        color: var(--brand-dark);
+      }
     }
 
     .sensitivity-table {
@@ -730,6 +835,11 @@
         grid-template-columns: 1fr;
       }
 
+      #model {
+        padding-right: clamp(16px, 3vw, 24px);
+        padding-left: clamp(16px, 3vw, 24px);
+      }
+
       .type-grid {
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       }
@@ -782,6 +892,34 @@
       .sensitivity-label {
         text-align: left;
       }
+
+      .model-form {
+        padding: 22px 16px;
+      }
+
+      .cap-rate-comparison {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .cap-rate-arrow {
+        display: none;
+      }
+
+      .export-btn-group {
+        flex-direction: column;
+      }
+
+      .export-btn-group .btn {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: clamp(2.6rem, 10vw, 4rem);
+      }
     }
 
     .form-section-label {
@@ -793,7 +931,15 @@
       color: var(--muted);
     }
 
+    .form-section-label-note {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
     .deal-score-result {
+      width: 100%;
+      min-width: 0;
       margin-top: 24px;
       padding: 24px;
       border: 2px solid var(--line);
@@ -814,7 +960,7 @@
 
     .deal-score-result strong {
       display: block;
-      font-size: 4rem;
+      font-size: 4.5rem;
       font-weight: 800;
       line-height: 1;
       margin-bottom: 10px;
@@ -863,7 +1009,7 @@
     }
 
     .score-breakdown-track {
-      height: 8px;
+      height: 10px;
       overflow: hidden;
       border-radius: 999px;
       background: var(--line);
@@ -886,7 +1032,7 @@
       margin-top: 12px;
       padding-top: 12px;
       border-top: 1px solid var(--line);
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     }
 
     .metric-note {
@@ -903,6 +1049,7 @@
     }
 
     .export-btn-group {
+      width: 100%;
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
@@ -1235,19 +1382,19 @@
                 <option>Data Center</option>
               </select>
             </label>
-            <div class="form-section-label">Property Address <span style="font-size:0.7rem; color:var(--muted); font-weight:400;">(optional - enables live comp data)</span></div>
-            <div class="form-group">
-              <label for="addressLine1">Street Address</label>
+            <div class="form-section-label">Property Address <span class="form-section-label-note">(optional - enables live comp data)</span></div>
+            <label for="addressLine1">
+              Street Address
               <input type="text" id="addressLine1" placeholder="e.g. 123 Main St" autocomplete="off" />
-            </div>
-            <div class="form-group">
-              <label for="addressLine2">City, State ZIP</label>
+            </label>
+            <label for="addressLine2">
+              City, State ZIP
               <input type="text" id="addressLine2" placeholder="e.g. Miami, FL 33101" autocomplete="off" />
-            </div>
-            <button type="button" class="btn btn-secondary" id="fetchCompsBtn" style="margin-bottom: 18px;">
+            </label>
+            <button type="button" class="btn btn-secondary fetch-comps-btn" id="fetchCompsBtn" aria-label="Pull comparable sales data for entered address">
               Pull Comp Data
             </button>
-            <p id="compsStatusBar" style="margin: 0 0 14px; font-size: 0.78rem; font-weight: 700; color: var(--muted);"></p>
+            <p class="status-bar" id="compsStatusBar"></p>
             <label>
               Asking Price
               <input id="price" type="text" inputmode="numeric" value="42,600,000"
@@ -1260,7 +1407,7 @@
             </label>
             <label>
               Year Built
-              <input id="yearBuilt" type="number" min="1900" max="2025" value="2005" />
+              <input id="yearBuilt" type="number" min="1900" max="2030" value="2005" />
             </label>
             <label>
               Advertised NOI (optional)
@@ -1276,6 +1423,7 @@
             </label>
           </div>
 
+          <div class="results-zone">
           <p class="form-section-label">Estimated by REDATA</p>
 
           <!-- Cap rate comparison -->
@@ -1310,7 +1458,7 @@
             </div>
           </div>
 
-          <p id="rateStatusBar" style="margin: 0 0 14px; font-size: 0.78rem; font-weight: 700; color: var(--muted);">
+          <p class="status-bar" id="rateStatusBar">
             Loading live rates…
           </p>
 
@@ -1359,21 +1507,21 @@
 
           <div class="deal-score-result" id="dealScoreResult" aria-live="polite">
             <span>Deal Score</span>
-            <strong id="dealScoreOutput">0</strong>
+            <strong id="dealScoreOutput">—</strong>
             <p id="dealVerdictOutput">Enter assumptions to score the deal</p>
             <div class="score-breakdown" id="scoreBreakdown"></div>
           </div>
 
           <div class="export-btn-group">
-            <button type="button" class="btn btn-primary export-btn" id="exportBtn">Export PDF</button>
-            <button type="button" class="btn btn-secondary" id="exportXlsxBtn">Export Excel</button>
-            <button type="button" class="btn btn-secondary" id="exportSheetsBtn">Export to Sheets</button>
+            <button type="button" class="btn btn-primary export-btn" id="exportBtn" aria-label="Export deal analysis as PDF">Export PDF</button>
+            <button type="button" class="btn btn-secondary" id="exportXlsxBtn" aria-label="Export deal analysis as Excel spreadsheet">Export Excel</button>
+            <button type="button" class="btn btn-secondary" id="exportSheetsBtn" aria-label="Export deal analysis to Google Sheets">Export to Sheets</button>
           </div>
 
           <div class="sensitivity-section" id="sensitivitySection">
             <div class="sensitivity-header">
               <div>
-                <p class="results-tier-label" style="margin-top: 28px;">Sensitivity analysis</p>
+                <p class="results-tier-label">Sensitivity analysis</p>
                 <p class="sensitivity-subline">How does this deal hold up as assumptions change?</p>
               </div>
               <div class="sensitivity-controls">
@@ -1415,6 +1563,7 @@
 
   <footer class="site-footer">
     <p>REDATA</p>
+    <p>© 2025 REDATA</p>
     <p>Commercial real estate intelligence platform concept.</p>
   </footer>
 
@@ -1443,14 +1592,12 @@
   <script>
     // TODO: Replace with your Google OAuth 2.0 client ID from console.cloud.google.com
     const GOOGLE_CLIENT_ID = "";
-    const FRED_API_KEY = "0562eef495aec2f5a50f09876e0c81da";
 
     async function fetchFredRate(seriesId) {
-      const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&api_key=${FRED_API_KEY}&sort_order=desc&limit=1&file_type=json`;
-      const response = await fetch(url);
+      const response = await fetch(`/api/fred?seriesId=${encodeURIComponent(seriesId)}`);
       if (!response.ok) throw new Error(`FRED fetch failed for ${seriesId}`);
       const data = await response.json();
-      const value = parseFloat(data.observations[0].value);
+      const value = parseFloat(data.value);
       if (isNaN(value)) throw new Error(`FRED returned invalid value for ${seriesId}`);
       return value;
     }
@@ -1623,52 +1770,41 @@
     });
 
     function getEstimatedCapRate(assetType) {
-      if (assetType === "Multifamily") {
-        return 5.5;
-      }
+      const estimatedCapRateByAssetType = {
+        "Multifamily": 5.5,
+        "Industrial": 6.5,
+        "Office": 7.5,
+        "Retail": 7,
+        "Medical Office": 6.0,
+        "Self-Storage": 6.25,
+        "Data Center": 5.75
+      };
 
-      if (assetType === "Office") {
-        return 7.5;
-      }
-
-      if (assetType === "Retail") {
-        return 7;
-      }
-
-      if (assetType === "Medical Office") {
-        return 6.0;
-      }
-
-      if (assetType === "Self-Storage") {
-        return 6.25;
-      }
-
-      if (assetType === "Data Center") {
-        return 5.75;
-      }
-
-      return 6.5;
+      return estimatedCapRateByAssetType[assetType] || 6.5;
     }
 
     function getYearBuiltPenalty(yearBuilt) {
       const assetType = document.querySelector("#assetType").value;
-      if (assetType === "Data Center") {
-        return 0;
+      const yearBuiltPenaltyByAssetType = {
+        "Data Center": 0
+      };
+
+      if (Object.prototype.hasOwnProperty.call(yearBuiltPenaltyByAssetType, assetType)) {
+        return yearBuiltPenaltyByAssetType[assetType];
       }
 
-      if (yearBuilt >= 2010) {
-        return 0;
-      }
+      const penaltyByVintage = {
+        "2010": 0,
+        "2000": 3,
+        "1980": 6
+      };
 
-      if (yearBuilt >= 2000) {
-        return 3;
-      }
+      const vintage = Object.keys(penaltyByVintage)
+        .map(Number)
+        .sort((a, b) => b - a)
+        .find((threshold) => yearBuilt >= threshold);
 
-      if (yearBuilt >= 1980) {
-        return 6;
-      }
-
-      return 10;
+      return vintage ? penaltyByVintage[vintage] : 10;
     }
 
     function getAssetAssumptions(assetType) {
@@ -1708,31 +1844,17 @@
     }
 
     function getCapRateAdjustment(assetType) {
-      if (assetType === "Multifamily") {
-        return -0.5;
-      }
+      const capRateAdjustmentByAssetType = {
+        "Multifamily": -0.5,
+        "Industrial": 0,
+        "Office": 0.5,
+        "Retail": 1,
+        "Medical Office": -0.25,
+        "Self-Storage": 0.25,
+        "Data Center": -0.5
+      };
 
-      if (assetType === "Office") {
-        return 0.5;
-      }
-
-      if (assetType === "Retail") {
-        return 1;
-      }
-
-      if (assetType === "Medical Office") {
-        return -0.25;
-      }
-
-      if (assetType === "Self-Storage") {
-        return 0.25;
-      }
-
-      if (assetType === "Data Center") {
-        return -0.5;
-      }
-
-      return 0;
+      return capRateAdjustmentByAssetType[assetType] || 0;
     }
 
     function scoreCapRate(capRatePercent, assetType) {
@@ -1856,12 +1978,12 @@
 
       return [
         {
-          label: "Market Momentum",
+          label: "Yield vs. Market (Cap Rate)",
           score: subScores.capRate,
           rationale: `Cap rate of ${metrics.capRatePercent.toFixed(1)}% is ${capPosition} for ${metrics.assetType}`
         },
         {
-          label: "Tenant Rollover Risk",
+          label: "Return Quality (IRR)",
           score: subScores.irr,
           rationale: `IRR of ${metrics.irrPercent.toFixed(1)}% ${irrPosition} the 12% return threshold`
         },
@@ -1937,6 +2059,144 @@
       return isFinite(rate) ? rate * 100 : 0;
     }
 
+    const sensitivityVariable = document.getElementById("sensitivityVariable");
+    const sensitivityBody = document.getElementById("sensitivityBody");
+    const sensitivityColHeader = document.getElementById("sensitivityColHeader");
+
+    function getScorePillClass(score) {
+      if (score >= 75) return "strong";
+      if (score >= 50) return "caution";
+      return "weak";
+    }
+
+    function computeRowMetrics(overrideKey, overrideValue) {
+      const assetType = assetTypeInput.value;
+      const basePrice = parseCommaNumber(priceInput.value) || 0;
+      const yearBuilt = Number(yearBuiltInput.value) || 0;
+      const baseHoldingPeriod = Number(holdingPeriodInput.value) || 1;
+      const assumptions = getAssetAssumptions(assetType);
+      const noiGrowthRate = assumptions.noiGrowthRate; // asset-specific
+
+      const advertisedNoi = Number(advertisedNoiInput.value);
+      const advertisedCapRatePct = Number(advertisedCapRateInput.value);
+      const estimatedCapRate = getEstimatedCapRate(assetType);
+
+      const price = overrideKey === "price" ? overrideValue : basePrice;
+      const holdingPeriod = overrideKey === "holdingPeriod" ? overrideValue : baseHoldingPeriod;
+
+      let noi;
+      if (overrideKey === "capRate") {
+        noi = price * (overrideValue / 100);
+      } else if (advertisedNoiInput.value !== "") {
+        noi = advertisedNoi;
+      } else if (advertisedCapRateInput.value !== "") {
+        noi = price * (advertisedCapRatePct / 100);
+      } else {
+        noi = price * (estimatedCapRate / 100);
+      }
+
+      const goingInCapRatePct = price > 0 ? (noi / price) * 100 : 0;
+      const scaledCapExpansion = scaleExitCapExpansion(assumptions.exitCapExpansion, holdingPeriod);
+      const exitCapRatePct = goingInCapRatePct + scaledCapExpansion; // asset-specific, holding-period-scaled
+      const exitNoi = noi * Math.pow(1 + noiGrowthRate, holdingPeriod);
+      const exitValue = exitCapRatePct > 0 ? exitNoi / (exitCapRatePct / 100) : 0;
+      const valueSpread = exitValue - price;
+      const valueSpreadPct = price > 0 ? (valueSpread / price) * 100 : -100;
+      const loanAmount = price * assumptions.ltv; // asset-specific
+      const debtService = loanAmount * assumptions.debtConstant; // asset-specific
+      const dscr = debtService > 0 ? noi / debtService : 0;
+      // Levered IRR - cash flows on equity invested, after debt service
+      const equity = price * (1 - assumptions.ltv);
+      const leveredCashFlows = [-equity];
+      for (let t = 1; t < holdingPeriod; t++) {
+        leveredCashFlows.push(noi * Math.pow(1 + noiGrowthRate, t) - debtService);
+      }
+      leveredCashFlows.push(
+        noi * Math.pow(1 + noiGrowthRate, holdingPeriod) - debtService + (exitValue - loanAmount)
+      );
+      const irr = price > 0 ? computeIRR(leveredCashFlows) : 0;
+
+      const rawScore = scoreCapRate(goingInCapRatePct, assetType)
+        + scoreDscr(dscr)
+        + scoreValueSpread(valueSpreadPct, 0)
+        + scoreIrr(irr);
+      const penalty = getYearBuiltPenalty(yearBuilt);
+      const score = Math.max(0, rawScore - penalty);
+
+      return { goingInCapRatePct, irr, dscr, score };
+    }
+
+    function buildSensitivityTable() {
+      const variable = sensitivityVariable.value;
+      const basePrice = parseCommaNumber(priceInput.value) || 0;
+      const baseHoldingPeriod = Number(holdingPeriodInput.value) || 1;
+      const estimatedCapRate = getEstimatedCapRate(assetTypeInput.value);
+      const advertisedCapRatePct = Number(advertisedCapRateInput.value);
+      const baseCapRate = advertisedCapRateInput.value !== ""
+        ? advertisedCapRatePct
+        : estimatedCapRate;
+
+      let steps = [];
+      let currentValue;
+      let formatLabel;
+
+      if (variable === "price") {
+        if (basePrice === 0) {
+          document.getElementById("sensitivityCapNote").style.display = "none";
+          sensitivityColHeader.textContent = "Asking Price";
+          sensitivityBody.innerHTML = "";
+          return;
+        }
+        currentValue = basePrice;
+        steps = [-0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15]
+          .map((pct) => pct === 0 ? basePrice : Number((basePrice * (1 + pct)).toFixed(2)))
+          .filter((candidate) => candidate > 0);
+        sensitivityColHeader.textContent = "Asking Price";
+        formatLabel = (v) => money.format(v);
+      } else if (variable === "capRate") {
+        currentValue = baseCapRate;
+        const step = 0.25;
+        for (let i = -3; i <= 3; i++) {
+          steps.push(Math.round((currentValue + i * step) * 100) / 100);
+        }
+        sensitivityColHeader.textContent = "Going-In Cap Rate";
+        formatLabel = (v) => `${v.toFixed(2)}%`;
+      } else if (variable === "holdingPeriod") {
+        currentValue = baseHoldingPeriod;
+        steps = [1, 2, 3, 5, 7, 10, 15].filter(v => v <= 30);
+        sensitivityColHeader.textContent = "Holding Period";
+        formatLabel = (v) => `${v} yr${v !== 1 ? "s" : ""}`;
+      }
+
+      const capNote = document.getElementById("sensitivityCapNote");
+      capNote.style.display = variable === "capRate" ? "block" : "none";
+      sensitivityBody.innerHTML = "";
+
+      steps.forEach((val) => {
+        const metrics = computeRowMetrics(variable, val);
+        const isCurrent = variable === "holdingPeriod"
+          ? val === currentValue
+          : variable === "price"
+            ? val === basePrice
+            : Math.abs(val - currentValue) < 0.01;
+
+        const pillClass = getScorePillClass(metrics.score);
+        const tr = document.createElement("tr");
+        if (isCurrent) tr.classList.add("is-current");
+
+        tr.innerHTML = `
+          <td>${formatLabel(val)}${isCurrent ? " ●" : ""}</td>
+          <td>${metrics.goingInCapRatePct.toFixed(1)}%</td>
+          <td>${metrics.irr.toFixed(1)}%</td>
+          <td>${metrics.dscr.toFixed(2)}</td>
+          <td><span class="score-pill ${pillClass}">${metrics.score}</span></td>
+        `;
+        sensitivityBody.appendChild(tr);
+      });
+    }
+
+    sensitivityVariable.addEventListener("change", buildSensitivityTable);
+
     function updateDealPreview() {
       const assetType = assetTypeInput.value;
       const price = parseCommaNumber(priceInput.value) || 0;
@@ -1958,6 +2218,7 @@
         dealScoreResult.style.borderColor = "var(--line)";
         dealVerdictOutput.textContent = "Enter an asking price to score this deal";
         renderScoreBreakdown(null, null);
+        buildSensitivityTable();
         return;
       }
       const sqft = parseCommaNumber(sqftInput.value) || 1;
@@ -1987,7 +2248,6 @@
       const debtService = loanAmount * assumptions.debtConstant; // asset-specific
       const dscr = debtService > 0 ? noi / debtService : 0;
       const debtYield = loanAmount > 0 ? (noi / loanAmount) * 100 : 0;
-      const cumulativeNoi = noi * holdingPeriod;
       // Levered IRR - cash flows on equity invested, after debt service
       const equity = price * (1 - assumptions.ltv);
       const leveredCashFlows = [-equity];
@@ -2046,6 +2306,7 @@
       const yearBuiltPenalty = getYearBuiltPenalty(yearBuilt);
       const adjustedScore = Math.max(0, rawScore - yearBuiltPenalty);
       updateScoreDisplay(adjustedScore, { ...scoreMetrics, price }, subScores);
+      buildSensitivityTable();
     }
 
     [
@@ -2062,12 +2323,25 @@
     });
 
     document.getElementById("fetchCompsBtn").addEventListener("click", fetchComps);
-
-    updateDealPreview();
+    document.getElementById('dealForm').addEventListener('submit', e => e.preventDefault());
 
     function getOutputText(id) {
       const el = document.getElementById(id);
       return el ? el.textContent.trim() : "";
+    }
+
+    function getScoreBreakdownExportRows() {
+      const labelMap = {
+        "Capital Plan Sensitivity": "Capital Plan Sensitivity (DSCR)",
+        "Comparable Sale Support": "Comparable Sale Support (Value Spread)"
+      };
+
+      return Array.from(scoreBreakdown.querySelectorAll(".score-breakdown-row")).map((row) => {
+        const label = row.querySelector(".score-breakdown-top span:first-child")?.textContent.trim() || "";
+        const score = row.querySelector(".score-breakdown-value")?.textContent.trim() || "";
+        const rationale = row.querySelector(".score-breakdown-rationale")?.textContent.trim() || "";
+        return [labelMap[label] || label, score, rationale];
+      });
     }
 
     function addPdfSection(doc, title, rows, startY) {
@@ -2098,6 +2372,36 @@
       return doc.lastAutoTable.finalY + 10;
     }
 
+    function addPdfSection3Col(doc, title, rows, startY) {
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(14, 74, 54);
+      doc.text(title, 36, startY);
+      doc.autoTable({
+        startY: startY + 4,
+        head: [["Criterion", "Score", "Rationale"]],
+        body: rows,
+        theme: "grid",
+        margin: { left: 36, right: 36 },
+        tableWidth: "auto",
+        styles: {
+          fontSize: 7.6,
+          cellPadding: 2.4,
+          lineColor: [208, 219, 214],
+          lineWidth: 0.4,
+          textColor: [15, 26, 22],
+          overflow: "linebreak"
+        },
+        columnStyles: {
+          0: { fontStyle: "bold", textColor: [82, 107, 97], cellWidth: 140 },
+          1: { halign: "center", cellWidth: 48 },
+          2: { cellWidth: "auto" }
+        },
+        pageBreak: "avoid"
+      });
+      return doc.lastAutoTable.finalY + 10;
+    }
+
     function getExportRows() {
       return [
         ["RETURN SUMMARY", ""],
@@ -2121,7 +2425,10 @@
         ["", ""],
         ["DEAL SCORE", ""],
         ["Score", getOutputText("dealScoreOutput")],
-        ["Verdict", getOutputText("dealVerdictOutput")]
+        ["Verdict", getOutputText("dealVerdictOutput")],
+        ["", ""],
+        ["SCORE BREAKDOWN", ""],
+        ...getScoreBreakdownExportRows()
       ];
     }
 
@@ -2145,11 +2452,11 @@
       const rows = getExportRows();
       const worksheet = {};
       XLSX.utils.sheet_add_aoa(worksheet, rows, { origin: "A1" });
-      worksheet["!cols"] = [{ wch: 28 }, { wch: 18 }];
+      worksheet["!cols"] = [{ wch: 36 }, { wch: 18 }, { wch: 64 }];
 
       rows.forEach((row, index) => {
         if (row[0] && row[1] === "") {
-          ["A", "B"].forEach((column) => {
+          ["A", "B", "C"].forEach((column) => {
             const cell = worksheet[`${column}${index + 1}`];
             if (cell) {
               cell.s = {
@@ -2175,6 +2482,8 @@
           return;
         }
 
+        // NOTE: gapi.auth2 is deprecated. For production, migrate to Google Identity Services (GIS):
+        // https://developers.google.com/identity/oauth2/web/guides/migration-to-gis
         window.gapi.load("client:auth2", {
           callback: resolve,
           onerror: () => reject(new Error("Google API client failed to load.")),
@@ -2284,6 +2593,11 @@
         ["Score", `${getOutputText("dealScoreOutput")} - ${getOutputText("dealVerdictOutput")}`]
       ], y);
 
+      const scoreBreakdownRows = getScoreBreakdownExportRows();
+      if (scoreBreakdownRows.length > 0) {
+        y = addPdfSection3Col(doc, "Score Breakdown", scoreBreakdownRows, y);
+      }
+
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(14, 74, 54);
@@ -2328,153 +2642,7 @@
     document.getElementById("exportXlsxBtn").addEventListener("click", exportDealExcel);
     document.getElementById("exportSheetsBtn").addEventListener("click", exportToSheets);
 
-    const sensitivityVariable = document.getElementById("sensitivityVariable");
-    const sensitivityBody = document.getElementById("sensitivityBody");
-    const sensitivityColHeader = document.getElementById("sensitivityColHeader");
-
-    function getScorePillClass(score) {
-      if (score >= 75) return "strong";
-      if (score >= 50) return "caution";
-      return "weak";
-    }
-
-    function computeRowMetrics(overrideKey, overrideValue) {
-      const assetType = assetTypeInput.value;
-      const basePrice = parseCommaNumber(priceInput.value) || 0;
-      const yearBuilt = Number(yearBuiltInput.value) || 0;
-      const baseHoldingPeriod = Number(holdingPeriodInput.value) || 1;
-      const assumptions = getAssetAssumptions(assetType);
-      const noiGrowthRate = assumptions.noiGrowthRate; // asset-specific
-
-      const advertisedNoi = Number(advertisedNoiInput.value);
-      const advertisedCapRatePct = Number(advertisedCapRateInput.value);
-      const estimatedCapRate = getEstimatedCapRate(assetType);
-
-      const price = overrideKey === "price" ? overrideValue : basePrice;
-      const holdingPeriod = overrideKey === "holdingPeriod" ? overrideValue : baseHoldingPeriod;
-
-      let noi;
-      if (overrideKey === "capRate") {
-        noi = price * (overrideValue / 100);
-      } else if (advertisedNoiInput.value !== "") {
-        noi = advertisedNoi;
-      } else if (advertisedCapRateInput.value !== "") {
-        noi = price * (advertisedCapRatePct / 100);
-      } else {
-        noi = price * (estimatedCapRate / 100);
-      }
-
-      const goingInCapRatePct = price > 0 ? (noi / price) * 100 : 0;
-      const scaledCapExpansion = scaleExitCapExpansion(assumptions.exitCapExpansion, holdingPeriod);
-      const exitCapRatePct = goingInCapRatePct + scaledCapExpansion; // asset-specific, holding-period-scaled
-      const exitNoi = noi * Math.pow(1 + noiGrowthRate, holdingPeriod);
-      const exitValue = exitCapRatePct > 0 ? exitNoi / (exitCapRatePct / 100) : 0;
-      const valueSpread = exitValue - price;
-      const valueSpreadPct = price > 0 ? (valueSpread / price) * 100 : -100;
-      const loanAmount = price * assumptions.ltv; // asset-specific
-      const debtService = loanAmount * assumptions.debtConstant; // asset-specific
-      const dscr = debtService > 0 ? noi / debtService : 0;
-      // Levered IRR - cash flows on equity invested, after debt service
-      const equity = price * (1 - assumptions.ltv);
-      const leveredCashFlows = [-equity];
-      for (let t = 1; t < holdingPeriod; t++) {
-        leveredCashFlows.push(noi * Math.pow(1 + noiGrowthRate, t) - debtService);
-      }
-      leveredCashFlows.push(
-        noi * Math.pow(1 + noiGrowthRate, holdingPeriod) - debtService + (exitValue - loanAmount)
-      );
-      const irr = price > 0 ? computeIRR(leveredCashFlows) : 0;
-
-      const rawScore = scoreCapRate(goingInCapRatePct, assetType)
-        + scoreDscr(dscr)
-        + scoreValueSpread(valueSpreadPct, 0)
-        + scoreIrr(irr);
-      const penalty = getYearBuiltPenalty(yearBuilt);
-      const score = Math.max(0, rawScore - penalty);
-
-      return { goingInCapRatePct, irr, dscr, score };
-    }
-
-    function buildSensitivityTable() {
-      const variable = sensitivityVariable.value;
-      const basePrice = parseCommaNumber(priceInput.value) || 0;
-      const baseHoldingPeriod = Number(holdingPeriodInput.value) || 1;
-      const estimatedCapRate = getEstimatedCapRate(assetTypeInput.value);
-      const advertisedCapRatePct = Number(advertisedCapRateInput.value);
-      const baseCapRate = advertisedCapRateInput.value !== ""
-        ? advertisedCapRatePct
-        : estimatedCapRate;
-
-      let steps = [];
-      let currentValue;
-      let formatLabel;
-
-      if (variable === "price") {
-        if (basePrice === 0) {
-          document.getElementById("sensitivityCapNote").style.display = "none";
-          sensitivityColHeader.textContent = "Asking Price";
-          sensitivityBody.innerHTML = "";
-          return;
-        }
-        currentValue = basePrice;
-        const step = Math.max(100000, Math.round(basePrice * 0.06 / 100000) * 100000) || 1000000;
-        for (let i = -3; i <= 3; i++) {
-          const candidate = currentValue + i * step;
-          if (candidate > 0) steps.push(candidate);
-        }
-        sensitivityColHeader.textContent = "Asking Price";
-        formatLabel = (v) => money.format(v);
-      } else if (variable === "capRate") {
-        currentValue = baseCapRate;
-        const step = 0.25;
-        for (let i = -3; i <= 3; i++) {
-          steps.push(Math.round((currentValue + i * step) * 100) / 100);
-        }
-        sensitivityColHeader.textContent = "Going-In Cap Rate";
-        formatLabel = (v) => `${v.toFixed(2)}%`;
-      } else if (variable === "holdingPeriod") {
-        currentValue = baseHoldingPeriod;
-        steps = [1, 2, 3, 5, 7, 10, 15].filter(v => v <= 30);
-        sensitivityColHeader.textContent = "Holding Period";
-        formatLabel = (v) => `${v} yr${v !== 1 ? "s" : ""}`;
-      }
-
-      const capNote = document.getElementById("sensitivityCapNote");
-      capNote.style.display = variable === "capRate" ? "block" : "none";
-      sensitivityBody.innerHTML = "";
-
-      steps.forEach((val) => {
-        const metrics = computeRowMetrics(variable, val);
-        const isCurrent = variable === "holdingPeriod"
-          ? val === currentValue
-          : variable === "price"
-            ? Math.abs(val - currentValue) === Math.min(...steps.map(s => Math.abs(s - currentValue)))
-            : Math.abs(val - currentValue) < 0.01;
-
-        const pillClass = getScorePillClass(metrics.score);
-        const tr = document.createElement("tr");
-        if (isCurrent) tr.classList.add("is-current");
-
-        tr.innerHTML = `
-          <td>${formatLabel(val)}${isCurrent ? " ●" : ""}</td>
-          <td>${metrics.goingInCapRatePct.toFixed(1)}%</td>
-          <td>${metrics.irr.toFixed(1)}%</td>
-          <td>${metrics.dscr.toFixed(2)}</td>
-          <td><span class="score-pill ${pillClass}">${metrics.score}</span></td>
-        `;
-        sensitivityBody.appendChild(tr);
-      });
-    }
-
-    sensitivityVariable.addEventListener("change", buildSensitivityTable);
-
-    const originalUpdateDealPreview = updateDealPreview;
-    updateDealPreview = function() {
-      originalUpdateDealPreview();
-      buildSensitivityTable();
-    };
-
-    buildSensitivityTable();
+    updateDealPreview();
     initFredRates();
   </script>
 </body>
