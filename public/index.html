@@ -585,6 +585,155 @@
       padding-top: 12px;
     }
 
+    .loopnet-import-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .loopnet-import-hint {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .loopnet-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 25, 20, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      padding: 20px;
+    }
+
+    .loopnet-modal-overlay[hidden] {
+      display: none;
+    }
+
+    .loopnet-modal {
+      width: 100%;
+      max-width: 620px;
+      background: var(--panel);
+      border-radius: 12px;
+      box-shadow: var(--shadow-deep);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .loopnet-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .loopnet-modal-header h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .loopnet-modal-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--muted);
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background 0.15s ease;
+    }
+
+    .loopnet-modal-close:hover {
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    .loopnet-instructions {
+      margin: 0;
+      padding: 16px 24px 12px 40px;
+      font-size: 0.84rem;
+      color: var(--muted);
+      line-height: 1.7;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .loopnet-instructions kbd {
+      display: inline-block;
+      padding: 1px 6px;
+      font-size: 0.78rem;
+      font-family: inherit;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: var(--ink);
+    }
+
+    .loopnet-paste-area {
+      width: 100%;
+      padding: 16px 24px;
+      font-size: 0.82rem;
+      font-family: inherit;
+      color: var(--ink);
+      background: var(--paper);
+      border: none;
+      outline: none;
+      resize: vertical;
+      min-height: 180px;
+      line-height: 1.55;
+    }
+
+    .loopnet-paste-area:focus {
+      background: #f0f4f2;
+    }
+
+    .loopnet-modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 24px;
+      border-top: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .loopnet-modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .loopnet-parse-status {
+      font-size: 0.82rem;
+      color: var(--muted);
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .loopnet-parse-status.success {
+      color: var(--brand-dark);
+    }
+
+    .loopnet-parse-status.error {
+      color: #9f342f;
+    }
+
+    .loopnet-field-highlight {
+      animation: loopnetPulse 1.4s ease;
+    }
+
+    @keyframes loopnetPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(26, 107, 80, 0.45); }
+      50%  { box-shadow: 0 0 0 6px rgba(26, 107, 80, 0.0); }
+      100% { box-shadow: 0 0 0 0 rgba(26, 107, 80, 0); }
+    }
+
     label {
       display: grid;
       gap: 7px;
@@ -964,6 +1113,25 @@
 
       .sensitivity-label {
         text-align: left;
+      }
+
+      .loopnet-import-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .loopnet-modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .loopnet-modal-actions {
+        flex-direction: column;
+      }
+
+      .loopnet-modal-actions .btn {
+        width: 100%;
       }
 
       .model-form {
@@ -1442,6 +1610,13 @@
         </div>
 
         <form class="model-form reveal" id="dealForm">
+          <div class="loopnet-import-bar">
+            <button type="button" class="btn btn-secondary loopnet-import-btn" id="loopnetImportBtn">
+              Import from LoopNet
+            </button>
+            <span class="loopnet-import-hint">Ctrl+A - Ctrl+C any LoopNet listing, then paste here</span>
+          </div>
+
           <div class="form-grid">
             <label>
               Asset Type
@@ -1700,6 +1875,34 @@
     <p>© 2026 REDATA</p>
     <p>Commercial real estate intelligence platform concept.</p>
   </footer>
+
+  <div class="loopnet-modal-overlay" id="loopnetModalOverlay" hidden>
+    <div class="loopnet-modal" role="dialog" aria-modal="true" aria-labelledby="loopnetModalTitle">
+      <div class="loopnet-modal-header">
+        <h3 id="loopnetModalTitle">Import from LoopNet</h3>
+        <button type="button" class="loopnet-modal-close" id="loopnetModalClose" aria-label="Close import modal">x</button>
+      </div>
+      <ol class="loopnet-instructions">
+        <li>Go to any LoopNet listing page</li>
+        <li>Press <kbd>Ctrl+A</kbd> to select all, then <kbd>Ctrl+C</kbd> to copy</li>
+        <li>Click in the box below and press <kbd>Ctrl+V</kbd> to paste</li>
+      </ol>
+      <textarea
+        id="loopnetPasteArea"
+        class="loopnet-paste-area"
+        placeholder="Paste LoopNet listing text here..."
+        rows="10"
+        spellcheck="false"
+      ></textarea>
+      <div class="loopnet-modal-footer">
+        <div class="loopnet-parse-status" id="loopnetParseStatus"></div>
+        <div class="loopnet-modal-actions">
+          <button type="button" class="btn btn-secondary" id="loopnetCancelBtn">Cancel</button>
+          <button type="button" class="btn btn-primary" id="loopnetParseBtn">Parse &amp; Fill</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     // Sticky header dark mode on scroll
@@ -2895,6 +3098,252 @@
     document.getElementById('exportBtn').addEventListener('click', exportDealPdf);
     document.getElementById("exportXlsxBtn").addEventListener("click", exportDealExcel);
     document.getElementById("exportSheetsBtn").addEventListener("click", exportToSheets);
+
+    const loopnetModalOverlay = document.getElementById('loopnetModalOverlay');
+    const loopnetPasteArea = document.getElementById('loopnetPasteArea');
+    const loopnetParseStatus = document.getElementById('loopnetParseStatus');
+
+    function openLoopnetModal() {
+      loopnetModalOverlay.hidden = false;
+      loopnetPasteArea.value = '';
+      loopnetParseStatus.textContent = '';
+      loopnetParseStatus.className = 'loopnet-parse-status';
+      setTimeout(() => loopnetPasteArea.focus(), 60);
+    }
+
+    function closeLoopnetModal() {
+      loopnetModalOverlay.hidden = true;
+      loopnetPasteArea.value = '';
+    }
+
+    document.getElementById('loopnetImportBtn').addEventListener('click', openLoopnetModal);
+    document.getElementById('loopnetModalClose').addEventListener('click', closeLoopnetModal);
+    document.getElementById('loopnetCancelBtn').addEventListener('click', closeLoopnetModal);
+
+    loopnetModalOverlay.addEventListener('click', (e) => {
+      if (e.target === loopnetModalOverlay) closeLoopnetModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !loopnetModalOverlay.hidden) closeLoopnetModal();
+    });
+
+    function parseLoopNetText(text) {
+      const result = {};
+      const filled = [];
+      const skipped = [];
+
+      const priceMatch =
+        text.match(/(?:^|\n)\s*Price\s*\n\s*\$([\d,]+)/m) ||
+        text.match(/\$\s*([\d,]+(?:\.\d+)?)\s*\(?\$[\d.]+\/SF\)?/);
+      if (priceMatch && priceMatch[1]) {
+        result.price = priceMatch[1].replace(/,/g, '');
+        filled.push('Asking Price');
+      } else {
+        skipped.push('Asking Price');
+      }
+
+      const sqftMatch =
+        text.match(/Building Size\s*\n\s*([\d,]+)\s*SF/i) ||
+        text.match(/([\d,]+)\s*SF\s*(?:100%|[\d]+%)/i);
+      if (sqftMatch && sqftMatch[1]) {
+        result.sqft = sqftMatch[1].replace(/,/g, '');
+        filled.push('Square Footage');
+      } else {
+        skipped.push('Square Footage');
+      }
+
+      const yearMatch =
+        text.match(/Year Built(?:\/Renovated)?\s*\n\s*(\d{4})/i);
+      if (yearMatch && yearMatch[1]) {
+        result.yearBuilt = yearMatch[1];
+        filled.push('Year Built');
+      } else {
+        skipped.push('Year Built');
+      }
+
+      const noiMatch =
+        text.match(/(?:^|\n)\s*NOI\s*\n\s*\$([\d,]+)/m);
+      if (noiMatch && noiMatch[1]) {
+        result.advertisedNoi = noiMatch[1].replace(/,/g, '');
+        filled.push('NOI');
+      } else {
+        skipped.push('NOI');
+      }
+
+      const capRateMatch =
+        text.match(/(?:^|\n)\s*Cap Rate\s*\n\s*([\d.]+)%/m);
+      if (capRateMatch && capRateMatch[1]) {
+        result.advertisedCapRate = capRateMatch[1];
+        filled.push('Cap Rate');
+      } else {
+        skipped.push('Cap Rate');
+      }
+
+      // ── OCCUPANCY % ───────────────────────────────────────────────────
+      // Matches: Percent Leased\n78%  in the Property Facts table
+      const occupancyMatch =
+        text.match(/Percent Leased\s*\n\s*([\d.]+)%/i);
+      if (occupancyMatch && occupancyMatch[1]) {
+        const pct = parseFloat(occupancyMatch[1]);
+        if (!isNaN(pct) && pct >= 0 && pct <= 100) {
+          result.occupancyPct = String(pct);
+          filled.push('Occupancy');
+        } else {
+          skipped.push('Occupancy');
+        }
+      } else {
+        skipped.push('Occupancy');
+      }
+
+      const assetTypeMap = {
+        'medical': 'Medical Office',
+        'medical office': 'Medical Office',
+        'life science': 'Medical Office',
+        'office': 'Office',
+        'flex': 'Office',
+        'industrial': 'Industrial',
+        'warehouse': 'Industrial',
+        'distribution': 'Industrial',
+        'manufacturing': 'Industrial',
+        'flex/industrial': 'Industrial',
+        'retail': 'Retail',
+        'strip center': 'Retail',
+        'storefront': 'Retail',
+        'freestanding': 'Retail',
+        'shopping center': 'Retail',
+        'multifamily': 'Multifamily',
+        'apartment': 'Multifamily',
+        'residential': 'Multifamily',
+        'self-storage': 'Self-Storage',
+        'self storage': 'Self-Storage',
+        'storage': 'Self-Storage',
+        'data center': 'Data Center',
+        'datacenter': 'Data Center'
+      };
+
+      const subtypeMatch =
+        text.match(/Property Subtype\s*\n\s*([^\n]+)/i) ||
+        text.match(/Property Type\s*\n\s*([^\n]+)/i);
+
+      if (subtypeMatch && subtypeMatch[1]) {
+        const raw = subtypeMatch[1].trim().toLowerCase();
+        const mappedType = Object.keys(assetTypeMap)
+          .filter(key => raw.includes(key))
+          .sort((a, b) => b.length - a.length)[0];
+
+        if (mappedType) {
+          result.assetType = assetTypeMap[mappedType];
+          filled.push('Asset Type');
+        } else {
+          skipped.push('Asset Type');
+        }
+      } else {
+        skipped.push('Asset Type');
+      }
+
+      const addressBlockMatch =
+        text.match(/Address:\s*([^\n,]+(?:Blvd|St|Ave|Dr|Rd|Way|Ln|Ct|Pkwy|Hwy|Loop|Pl|Cir|Ter|Trl|Fwy)[^\n,]*),\s*([^\n]+,\s*[A-Z]{2}\s*\d{5})/i) ||
+        text.match(/(\d+[^\n]*(?:Blvd|St|Ave|Dr|Rd|Way|Ln|Ct|Pkwy|Hwy|Loop|Pl|Cir|Ter|Trl|Fwy)[^\n]*)\n\s*([A-Za-z\s]+,\s*[A-Z]{2}\s*\d{5})/i);
+
+      if (addressBlockMatch && addressBlockMatch[1] && addressBlockMatch[2]) {
+        result.addressLine1 = addressBlockMatch[1].trim();
+        result.addressLine2 = addressBlockMatch[2].trim();
+        filled.push('Address');
+      } else {
+        skipped.push('Address');
+      }
+
+      return { result, filled, skipped };
+    }
+
+    function applyLoopNetResult(result, filled) {
+      function setField(id, value) {
+        const el = document.getElementById(id);
+        if (!el || value === undefined || value === null || value === '') return;
+        el.value = value;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.classList.remove('loopnet-field-highlight');
+        void el.offsetWidth;
+        el.classList.add('loopnet-field-highlight');
+        setTimeout(() => el.classList.remove('loopnet-field-highlight'), 1400);
+      }
+
+      if (result.price) setField('price', Number(result.price).toLocaleString('en-US'));
+      if (result.sqft) setField('sqft', Number(result.sqft).toLocaleString('en-US'));
+      if (result.yearBuilt) setField('yearBuilt', result.yearBuilt);
+      if (result.advertisedNoi) setField('advertisedNoi', result.advertisedNoi);
+      if (result.advertisedCapRate) setField('advertisedCapRate', result.advertisedCapRate);
+      if (result.addressLine1) setField('addressLine1', result.addressLine1);
+      if (result.addressLine2) setField('addressLine2', result.addressLine2);
+      if (result.occupancyPct) {
+        setField('occupancyPct', result.occupancyPct);
+        // Auto-open advanced panel so user sees the populated occupancy field
+        const advancedPanelEl = document.getElementById('advancedPanel');
+        const advancedToggleBtnEl = document.getElementById('advancedToggleBtn');
+        if (advancedPanelEl && advancedPanelEl.hidden) {
+          advancedPanelEl.hidden = false;
+          if (advancedToggleBtnEl) advancedToggleBtnEl.setAttribute('aria-expanded', 'true');
+        }
+      }
+
+      if (result.assetType) {
+        const select = document.getElementById('assetType');
+        if (select) {
+          const option = Array.from(select.options)
+            .find(o => o.text === result.assetType);
+          if (option) {
+            select.value = option.value;
+            select.dispatchEvent(new Event('input', { bubbles: true }));
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            select.classList.remove('loopnet-field-highlight');
+            void select.offsetWidth;
+            select.classList.add('loopnet-field-highlight');
+            setTimeout(() => select.classList.remove('loopnet-field-highlight'), 1400);
+          }
+        }
+      }
+
+      updateDealPreview();
+    }
+
+    document.getElementById('loopnetParseBtn').addEventListener('click', () => {
+      const text = loopnetPasteArea.value.trim();
+
+      if (!text) {
+        loopnetParseStatus.textContent = 'Please paste a LoopNet listing first.';
+        loopnetParseStatus.className = 'loopnet-parse-status error';
+        return;
+      }
+
+      const { result, filled, skipped } = parseLoopNetText(text);
+
+      if (filled.length === 0) {
+        loopnetParseStatus.textContent = "Couldn't extract any fields. Make sure you copied the full LoopNet page (Ctrl+A - Ctrl+C).";
+        loopnetParseStatus.className = 'loopnet-parse-status error';
+        return;
+      }
+
+      applyLoopNetResult(result, filled);
+
+      const filledMsg = filled.length ? `Filled: ${filled.join(', ')}.` : '';
+      const skippedMsg = skipped.length ? ` Not found: ${skipped.join(', ')}.` : '';
+      loopnetParseStatus.textContent = filledMsg + skippedMsg;
+      loopnetParseStatus.className = 'loopnet-parse-status success';
+
+      setTimeout(() => closeLoopnetModal(), 2200);
+    });
+
+    loopnetPasteArea.addEventListener('paste', () => {
+      setTimeout(() => {
+        const text = loopnetPasteArea.value.trim();
+        if (text.length > 200) {
+          loopnetParseStatus.textContent = 'Listing detected - click Parse & Fill to import.';
+          loopnetParseStatus.className = 'loopnet-parse-status success';
+        }
+      }, 80);
+    });
 
     updateDealPreview();
     initFredRates();
