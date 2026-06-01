@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -588,10 +588,18 @@
     .loopnet-import-bar {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 14px;
       margin-bottom: 22px;
       padding-bottom: 20px;
       border-bottom: 1px solid var(--line);
+    }
+
+    .loopnet-import-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .loopnet-import-hint {
@@ -1121,6 +1129,11 @@
         gap: 8px;
       }
 
+      .loopnet-import-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
       .loopnet-modal-footer {
         flex-direction: column;
         align-items: stretch;
@@ -1323,7 +1336,7 @@
       }
 
       .model-copy h2::before {
-        content: "REDATA — Deal Analysis Summary";
+        content: "REDATA â€” Deal Analysis Summary";
         display: block;
         font-size: 0.84rem;
         font-weight: 700;
@@ -1603,7 +1616,7 @@
         <div class="model-copy">
           <h2>Score a deal in under a minute.</h2>
           <p>
-            Enter what's visible on any LoopNet listing — asking price, square footage,
+            Enter what's visible on any LoopNet listing â€” asking price, square footage,
             year built, and asset type. REDATA estimates NOI, structures the debt,
             projects exit value, and scores the deal across four weighted criteria.
           </p>
@@ -1611,10 +1624,15 @@
 
         <form class="model-form reveal" id="dealForm">
           <div class="loopnet-import-bar">
-            <button type="button" class="btn btn-secondary loopnet-import-btn" id="loopnetImportBtn">
-              Import from LoopNet
+            <div class="loopnet-import-actions">
+              <button type="button" class="btn btn-secondary loopnet-import-btn" id="loopnetImportBtn">
+                Import from LoopNet
+              </button>
+              <span class="loopnet-import-hint">Ctrl+A - Ctrl+C any LoopNet listing, then paste here</span>
+            </div>
+            <button type="button" class="btn btn-secondary" id="resetFormBtn">
+              ↺ Reset
             </button>
-            <span class="loopnet-import-hint">Ctrl+A - Ctrl+C any LoopNet listing, then paste here</span>
           </div>
 
           <div class="form-grid">
@@ -1739,12 +1757,12 @@
           <div class="cap-rate-comparison" aria-label="Cap rate story">
             <div class="cap-rate-item">
               <span>Going-In Cap Rate</span>
-              <strong id="goingInCapRateOutput">—</strong>
+              <strong id="goingInCapRateOutput">â€”</strong>
             </div>
-            <div class="cap-rate-arrow">→</div>
+            <div class="cap-rate-arrow">â†’</div>
             <div class="cap-rate-item">
               <span>Est. Exit Cap Rate</span>
-              <strong id="exitCapRateOutput">—</strong>
+              <strong id="exitCapRateOutput">â€”</strong>
               <small class="metric-note">+0.35% expansion assumed</small>
             </div>
           </div>
@@ -1754,21 +1772,21 @@
           <div class="estimate" aria-live="polite">
             <div>
               <span>Levered IRR</span>
-              <strong id="irrOutput2">—</strong>
+              <strong id="irrOutput2">â€”</strong>
               <small class="metric-note">On equity after debt service</small>
             </div>
             <div>
               <span>Exit Value</span>
-              <strong id="exitValueOutput">—</strong>
+              <strong id="exitValueOutput">â€”</strong>
             </div>
             <div>
               <span>Value Spread</span>
-              <strong id="spreadOutput">—</strong>
+              <strong id="spreadOutput">â€”</strong>
             </div>
           </div>
 
           <p class="status-bar" id="rateStatusBar">
-            Loading live rates…
+            Loading live ratesâ€¦
           </p>
 
           <!-- Tier 2: Debt & Structure -->
@@ -1776,19 +1794,19 @@
           <div class="estimate secondary-estimate" aria-live="polite">
             <div>
               <span>DSCR</span>
-              <strong id="dscrOutput">—</strong>
+              <strong id="dscrOutput">â€”</strong>
             </div>
             <div>
               <span>Debt Yield</span>
-              <strong id="debtYieldOutput">—</strong>
+              <strong id="debtYieldOutput">â€”</strong>
             </div>
             <div>
               <span>Est. Loan Amount</span>
-              <strong id="loanAmountOutput">—</strong>
+              <strong id="loanAmountOutput">â€”</strong>
             </div>
             <div>
               <span>Est. Debt Service</span>
-              <strong id="debtServiceOutput">—</strong>
+              <strong id="debtServiceOutput">â€”</strong>
             </div>
           </div>
 
@@ -1797,26 +1815,26 @@
           <div class="estimate secondary-estimate" aria-live="polite">
             <div>
               <span>NOI</span>
-              <strong id="noiOutput">—</strong>
+              <strong id="noiOutput">â€”</strong>
             </div>
             <div>
               <span>Exit NOI</span>
-              <strong id="exitNoiOutput">—</strong>
+              <strong id="exitNoiOutput">â€”</strong>
               <small class="metric-note">Grown at 2.5% annually</small>
             </div>
             <div>
               <span>Price per SF</span>
-              <strong id="pricePerSfOutput">—</strong>
+              <strong id="pricePerSfOutput">â€”</strong>
             </div>
             <div>
               <span>NOI per SF</span>
-              <strong id="noiPerSfOutput">—</strong>
+              <strong id="noiPerSfOutput">â€”</strong>
             </div>
           </div>
 
           <div class="deal-score-result" id="dealScoreResult" aria-live="polite">
             <span>Deal Score</span>
-            <strong id="dealScoreOutput">—</strong>
+            <strong id="dealScoreOutput">â€”</strong>
             <p id="dealVerdictOutput">Enter assumptions to score the deal</p>
             <div class="score-breakdown" id="scoreBreakdown"></div>
           </div>
@@ -1872,7 +1890,7 @@
 
   <footer class="site-footer">
     <p>REDATA</p>
-    <p>© 2026 REDATA</p>
+    <p>Â© 2026 REDATA</p>
     <p>Commercial real estate intelligence platform concept.</p>
   </footer>
 
@@ -1948,7 +1966,7 @@
       return monthly * 12;
     }
 
-    // Live rate state — populated by initFredRates() on page load
+    // Live rate state â€” populated by initFredRates() on page load
     const liveRates = {
       loaded: false,
       sofr: null,
@@ -1990,7 +2008,7 @@
         updateDealPreview();
         updateRateStatusUI(sofr, tenYr);
       } catch (err) {
-        // Silently fall back to hardcoded constants — model still works
+        // Silently fall back to hardcoded constants â€” model still works
         console.warn("FRED rate fetch failed, using hardcoded defaults:", err.message);
         updateRateStatusUI(null, null);
       }
@@ -2003,7 +2021,7 @@
         el.textContent = "Debt assumptions: using baseline defaults";
         el.style.color = "var(--muted)";
       } else {
-        el.textContent = `Live rates loaded — SOFR ${sofr.toFixed(2)}% · 10-Yr Treasury ${tenYr.toFixed(2)}%`;
+        el.textContent = `Live rates loaded â€” SOFR ${sofr.toFixed(2)}% Â· 10-Yr Treasury ${tenYr.toFixed(2)}%`;
         el.style.color = "var(--brand-dark)";
       }
     }
@@ -2038,7 +2056,7 @@
           statusEl.textContent = "No comps found within 5 miles. Score using model defaults.";
           statusEl.style.color = "var(--muted)";
         } else {
-          statusEl.textContent = `${data.compCount} comp${data.compCount > 1 ? "s" : ""} found within ${data.radiusMiles} mile${data.radiusMiles > 1 ? "s" : ""} — median ${data.medianPricePerSqft ? "$" + data.medianPricePerSqft.toFixed(0) + "/SF" : "N/A"}`;
+          statusEl.textContent = `${data.compCount} comp${data.compCount > 1 ? "s" : ""} found within ${data.radiusMiles} mile${data.radiusMiles > 1 ? "s" : ""} â€” median ${data.medianPricePerSqft ? "$" + data.medianPricePerSqft.toFixed(0) + "/SF" : "N/A"}`;
           statusEl.style.color = "var(--brand-dark)";
         }
 
@@ -2522,7 +2540,7 @@
         if (isCurrent) tr.classList.add("is-current");
 
         tr.innerHTML = `
-          <td>${formatLabel(val)}${isCurrent ? " ●" : ""}</td>
+          <td>${formatLabel(val)}${isCurrent ? " â—" : ""}</td>
           <td>${metrics.goingInCapRatePct.toFixed(1)}%</td>
           <td>${metrics.irr.toFixed(1)}%</td>
           <td>${metrics.dscr.toFixed(2)}</td>
@@ -2550,10 +2568,10 @@
         ];
         placeholders.forEach(id => {
           const el = document.getElementById(id);
-          if (el) el.textContent = "—";
+          if (el) el.textContent = "â€”";
         });
         spreadOutput.style.color = "var(--muted)";
-        dealScoreOutput.textContent = "—";
+        dealScoreOutput.textContent = "â€”";
         dealScoreOutput.style.color = "var(--muted)";
         dealScoreResult.style.borderColor = "var(--line)";
         dealVerdictOutput.textContent = "Enter an asking price to score this deal";
@@ -3007,7 +3025,7 @@
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(17);
-      doc.text("REDATA — Deal Analysis", 36, 31);
+      doc.text("REDATA â€” Deal Analysis", 36, 31);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9.5);
       doc.text(`${assetType} | Asking Price: $${priceText}`, 36, 50);
@@ -3116,6 +3134,49 @@
       loopnetPasteArea.value = '';
     }
 
+    document.getElementById('resetFormBtn').addEventListener('click', function () {
+      if (!confirm('Reset all inputs to defaults?')) return;
+
+      // Core inputs
+      document.getElementById('assetType').value = 'Industrial';
+      document.getElementById('price').value = '42,600,000';
+      document.getElementById('sqft').value = '248,000';
+      document.getElementById('yearBuilt').value = '2005';
+      document.getElementById('advertisedNoi').value = '';
+      document.getElementById('advertisedCapRate').value = '';
+      document.getElementById('holdingPeriod').value = '5';
+      document.getElementById('addressLine1').value = '';
+      document.getElementById('addressLine2').value = '';
+
+      // Advanced inputs
+      document.getElementById('occupancyPct').value = '95';
+      document.getElementById('noiBasis').value = 'inplace';
+      document.getElementById('capexReserve').value = '0.50';
+      document.getElementById('leaseExpiryPct').value = '0';
+      document.getElementById('tenantCredit').value = 'regional';
+      document.getElementById('renovationBudget').value = '0';
+      document.getElementById('walt').value = '5';
+      document.getElementById('numTenants').value = '1';
+
+      // Collapse advanced panel if open
+      const advancedPanel = document.getElementById('advancedPanel');
+      const advancedToggleBtn = document.getElementById('advancedToggleBtn');
+      if (advancedPanel && !advancedPanel.hidden) {
+        advancedPanel.hidden = true;
+        advancedToggleBtn.setAttribute('aria-expanded', 'false');
+      }
+
+      // Clear comps state
+      compsData.loaded = false;
+      compsData.medianPricePerSqft = null;
+      compsData.compCount = 0;
+      compsData.comps = [];
+      const compsStatusBar = document.getElementById('compsStatusBar');
+      if (compsStatusBar) compsStatusBar.textContent = '';
+
+      // Re-run the deal preview to refresh all outputs
+      updateDealPreview();
+    });
     document.getElementById('loopnetImportBtn').addEventListener('click', openLoopnetModal);
     document.getElementById('loopnetModalClose').addEventListener('click', closeLoopnetModal);
     document.getElementById('loopnetCancelBtn').addEventListener('click', closeLoopnetModal);
@@ -3180,7 +3241,7 @@
         skipped.push('Cap Rate');
       }
 
-      // ── OCCUPANCY % ───────────────────────────────────────────────────
+      // â”€â”€ OCCUPANCY % â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       // Matches: Percent Leased\n78%  in the Property Facts table
       const occupancyMatch =
         text.match(/Percent Leased\s*\n\s*([\d.]+)%/i);
@@ -3350,3 +3411,4 @@
   </script>
 </body>
 </html>
+
