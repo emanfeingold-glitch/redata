@@ -513,6 +513,78 @@
       border: 1px solid var(--line);
     }
 
+    .advanced-toggle {
+      margin: 18px 0 0;
+    }
+
+    .advanced-toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: none;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      transition: border-color 0.2s ease, color 0.2s ease;
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .advanced-toggle-btn:hover {
+      border-color: var(--brand);
+      color: var(--brand);
+    }
+
+    .advanced-toggle-btn[aria-expanded="true"] {
+      border-color: var(--brand);
+      color: var(--brand-dark);
+    }
+
+    .advanced-chevron {
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .advanced-toggle-btn[aria-expanded="true"] .advanced-chevron {
+      transform: rotate(180deg);
+    }
+
+    .advanced-subline {
+      margin: 6px 0 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .advanced-panel {
+      margin-top: 14px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+    }
+
+    .advanced-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .advanced-note {
+      margin: 16px 0 0;
+      font-size: 0.76rem;
+      color: var(--muted);
+      line-height: 1.5;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+
     label {
       display: grid;
       gap: 7px;
@@ -871,6 +943,7 @@
       .signal-row,
       .metric-grid,
       .form-grid,
+      .advanced-grid,
       .estimate,
       .type-grid {
         grid-template-columns: 1fr;
@@ -1423,6 +1496,67 @@
             </label>
           </div>
 
+          <div class="advanced-toggle" id="advancedToggle">
+            <button type="button" class="advanced-toggle-btn" id="advancedToggleBtn" aria-expanded="false" aria-controls="advancedPanel">
+              <span>Advanced Inputs</span>
+              <svg class="advanced-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <p class="advanced-subline">Optional. Refines scoring for occupancy, lease structure, capital needs, and tenant risk.</p>
+          </div>
+
+          <div class="advanced-panel" id="advancedPanel" hidden>
+            <div class="advanced-grid">
+              <label>
+                Current Occupancy %
+                <input type="number" id="occupancyPct" min="0" max="100" step="1" value="95"
+                       placeholder="95" autocomplete="off" />
+              </label>
+              <label>
+                NOI Basis
+                <select id="noiBasis">
+                  <option value="inplace">In-Place (Actual)</option>
+                  <option value="proforma">Pro-Forma (Projected)</option>
+                </select>
+              </label>
+              <label>
+                CapEx Reserve ($/SF/yr)
+                <input type="number" id="capexReserve" min="0" step="0.05" value="0.50"
+                       placeholder="0.50" autocomplete="off" />
+              </label>
+              <label>
+                Leases Expiring &lt;24 Mo (%)
+                <input type="number" id="leaseExpiryPct" min="0" max="100" step="1" value="0"
+                       placeholder="0" autocomplete="off" />
+              </label>
+              <label>
+                Anchor Tenant Credit
+                <select id="tenantCredit">
+                  <option value="institutional">Institutional (National/IG)</option>
+                  <option value="regional" selected>Regional (Local/Established)</option>
+                  <option value="speculative">Speculative (Distressed/Unknown)</option>
+                </select>
+              </label>
+              <label>
+                Renovation Budget ($)
+                <input type="number" id="renovationBudget" min="0" step="10000" value="0"
+                       placeholder="0 - one-time cost added to basis" autocomplete="off" />
+              </label>
+              <label>
+                WALT (years)
+                <input type="number" id="walt" min="0" max="30" step="0.5" value="5"
+                       placeholder="5" autocomplete="off" />
+              </label>
+              <label>
+                Number of Tenants
+                <input type="number" id="numTenants" min="1" step="1" value="1"
+                       placeholder="1" autocomplete="off" />
+              </label>
+            </div>
+            <p class="advanced-note">Advanced inputs adjust NOI, scoring weights, and IRR calculations. Leave at defaults for a standard analysis.</p>
+          </div>
+
           <div class="results-zone">
           <p class="form-section-label">Estimated by REDATA</p>
 
@@ -1563,7 +1697,7 @@
 
   <footer class="site-footer">
     <p>REDATA</p>
-    <p>© 2025 REDATA</p>
+    <p>© 2026 REDATA</p>
     <p>Commercial real estate intelligence platform concept.</p>
   </footer>
 
@@ -2197,6 +2331,9 @@
 
     sensitivityVariable.addEventListener("change", buildSensitivityTable);
 
+    let capexUserEdited = false;
+    let numTenantsUserEdited = false;
+
     function updateDealPreview() {
       const assetType = assetTypeInput.value;
       const price = parseCommaNumber(priceInput.value) || 0;
@@ -2228,6 +2365,31 @@
       const advertisedCapRatePct = Number(advertisedCapRateInput.value);
       const estimatedCapRate = getEstimatedCapRate(assetType);
 
+      // --- Advanced inputs ---
+      const occupancyPct = Math.min(100, Math.max(0, parseFloat(document.getElementById('occupancyPct')?.value) || 95)) / 100;
+      const noiBasis = document.getElementById('noiBasis')?.value || 'inplace';
+      const capexReserve = Math.max(0, parseFloat(document.getElementById('capexReserve')?.value) || 0.50);
+      const leaseExpiryPct = Math.min(100, Math.max(0, parseFloat(document.getElementById('leaseExpiryPct')?.value) || 0)) / 100;
+      const tenantCredit = document.getElementById('tenantCredit')?.value || 'regional';
+      const renovationBudget = Math.max(0, parseFloat(document.getElementById('renovationBudget')?.value) || 0);
+      const walt = Math.max(0, parseFloat(document.getElementById('walt')?.value) || 5);
+      const numTenants = Math.max(1, parseInt(document.getElementById('numTenants')?.value) || 1);
+
+      // Occupancy haircut: scale NOI proportionally below 95% baseline.
+      const occupancyHaircut = Math.min(1, occupancyPct / 0.95);
+
+      // Pro-forma haircut: 15% reduction if NOI is pro-forma.
+      const proformaHaircut = noiBasis === 'proforma' ? 0.85 : 1.0;
+
+      // Combined NOI multiplier.
+      const advancedNOIMultiplier = occupancyHaircut * proformaHaircut;
+
+      // CapEx reserve uses $0.50/SF/yr as the neutral baseline to preserve default results.
+      const capexAnnual = Math.max(0, capexReserve - 0.50) * sqft;
+
+      // Renovation budget adds to effective purchase price for IRR basis.
+      const advancedBasisAdder = renovationBudget;
+
       let noi;
       if (advertisedNoiInput.value !== "") {
         noi = advertisedNoi;
@@ -2237,6 +2399,13 @@
         noi = price * (estimatedCapRate / 100);
       }
 
+      // Apply advanced NOI adjustments.
+      noi = (noi * advancedNOIMultiplier) - capexAnnual;
+      noi = Math.max(0, noi);
+
+      // Apply renovation budget to price basis.
+      const effectivePrice = price + advancedBasisAdder;
+
       const goingInCapRatePct = price > 0 ? (noi / price) * 100 : 0;
       const scaledCapExpansion = scaleExitCapExpansion(assumptions.exitCapExpansion, holdingPeriod);
       const exitCapRatePct = goingInCapRatePct + scaledCapExpansion; // asset-specific, holding-period-scaled
@@ -2244,12 +2413,12 @@
       const exitValue = exitCapRatePct > 0 ? exitNoi / (exitCapRatePct / 100) : 0;
       const valueSpread = exitValue - price;
       const valueSpreadPct = price > 0 ? (valueSpread / price) * 100 : -100;
-      const loanAmount = price * assumptions.ltv; // asset-specific
+      const loanAmount = effectivePrice * assumptions.ltv; // asset-specific
       const debtService = loanAmount * assumptions.debtConstant; // asset-specific
       const dscr = debtService > 0 ? noi / debtService : 0;
       const debtYield = loanAmount > 0 ? (noi / loanAmount) * 100 : 0;
       // Levered IRR - cash flows on equity invested, after debt service
-      const equity = price * (1 - assumptions.ltv);
+      const equity = effectivePrice * (1 - assumptions.ltv);
       const leveredCashFlows = [-equity];
       for (let t = 1; t < holdingPeriod; t++) {
         leveredCashFlows.push(noi * Math.pow(1 + noiGrowthRate, t) - debtService);
@@ -2257,7 +2426,7 @@
       leveredCashFlows.push(
         noi * Math.pow(1 + noiGrowthRate, holdingPeriod) - debtService + (exitValue - loanAmount)
       );
-      const irr = price > 0 ? computeIRR(leveredCashFlows) : 0;
+      const irr = effectivePrice > 0 ? computeIRR(leveredCashFlows) : 0;
       const pricePerSf = sqft > 0 ? price / sqft : 0;
       const noiPerSf = sqft > 0 ? noi / sqft : 0;
 
@@ -2275,6 +2444,28 @@
         dscr: scoreDscr(scoreMetrics.dscr),
         valueSpread: scoreValueSpread(scoreMetrics.spreadPercent, pricePerSf)
       };
+      // Lease expiry penalty - applied to Return Quality (IRR) sub-score.
+      const leaseExpiryPenalty =
+        leaseExpiryPct > 0.50 ? 10 :
+        leaseExpiryPct > 0.25 ? 6 :
+        leaseExpiryPct > 0.10 ? 3 : 0;
+
+      // Tenant credit penalty - applied to Capital Plan Sensitivity (DSCR) sub-score.
+      const tenantCreditPenalty = tenantCredit === 'speculative' ? 6 : 0;
+
+      // WALT penalty - applied to Yield vs. Market (Cap Rate) sub-score.
+      const waltPenalty =
+        walt < 1 ? 8 :
+        walt < 3 ? 5 :
+        walt < 5 ? 2 : 0;
+
+      // Tenant concentration penalty - active once user edits tenants, preserving neutral defaults.
+      const concentrationPenalty = numTenantsUserEdited && numTenants === 1 ? 3 : 0;
+
+      subScores.capRate = Math.max(0, subScores.capRate - waltPenalty);
+      subScores.irr = Math.max(0, subScores.irr - leaseExpiryPenalty);
+      subScores.dscr = Math.max(0, subScores.dscr - tenantCreditPenalty);
+      subScores.valueSpread = Math.max(0, subScores.valueSpread - concentrationPenalty);
       const rawScore = subScores.capRate + subScores.irr + subScores.dscr + subScores.valueSpread;
 
       document.querySelector("#irrOutput2").textContent = `${irr.toFixed(1)}%`;
@@ -2316,10 +2507,52 @@
       yearBuiltInput,
       advertisedNoiInput,
       advertisedCapRateInput,
-      holdingPeriodInput
+      holdingPeriodInput,
+      document.getElementById('occupancyPct'),
+      document.getElementById('noiBasis'),
+      document.getElementById('capexReserve'),
+      document.getElementById('leaseExpiryPct'),
+      document.getElementById('tenantCredit'),
+      document.getElementById('renovationBudget'),
+      document.getElementById('walt'),
+      document.getElementById('numTenants')
     ].forEach((input) => {
       input.addEventListener("input", () => updateDealPreview());
       input.addEventListener("change", () => updateDealPreview());
+    });
+
+    // Advanced panel toggle
+    const advancedToggleBtn = document.getElementById('advancedToggleBtn');
+    const advancedPanel = document.getElementById('advancedPanel');
+
+    advancedToggleBtn.addEventListener('click', () => {
+      const isExpanded = advancedToggleBtn.getAttribute('aria-expanded') === 'true';
+      advancedToggleBtn.setAttribute('aria-expanded', String(!isExpanded));
+      if (isExpanded) {
+        advancedPanel.hidden = true;
+      } else {
+        advancedPanel.hidden = false;
+      }
+    });
+
+    document.getElementById('capexReserve').addEventListener('input', () => {
+      capexUserEdited = true;
+    });
+
+    document.getElementById('numTenants').addEventListener('input', () => {
+      numTenantsUserEdited = true;
+      updateDealPreview();
+    });
+
+    document.getElementById('yearBuilt').addEventListener('change', () => {
+      if (capexUserEdited) return;
+      const yr = parseInt(document.getElementById('yearBuilt').value) || 2000;
+      const capexReserveInput = document.getElementById('capexReserve');
+      if (yr >= 2010) capexReserveInput.value = '0.40';
+      else if (yr >= 2000) capexReserveInput.value = '0.85';
+      else if (yr >= 1980) capexReserveInput.value = '1.50';
+      else capexReserveInput.value = '2.25';
+      updateDealPreview();
     });
 
     document.getElementById("fetchCompsBtn").addEventListener("click", fetchComps);
@@ -2428,7 +2661,17 @@
         ["Verdict", getOutputText("dealVerdictOutput")],
         ["", ""],
         ["SCORE BREAKDOWN", ""],
-        ...getScoreBreakdownExportRows()
+        ...getScoreBreakdownExportRows(),
+        ["", ""],
+        ["ADVANCED INPUTS", ""],
+        ["Occupancy", `${document.getElementById('occupancyPct')?.value || 95}%`],
+        ["NOI Basis", document.getElementById('noiBasis')?.value === 'proforma' ? 'Pro-Forma (15% haircut applied)' : 'In-Place'],
+        ["CapEx Reserve", `$${document.getElementById('capexReserve')?.value || '0.50'}/SF/yr`],
+        ["Leases Expiring <24mo", `${document.getElementById('leaseExpiryPct')?.value || 0}%`],
+        ["Anchor Tenant Credit", document.getElementById('tenantCredit')?.value || 'regional'],
+        ["Renovation Budget", `$${Number(document.getElementById('renovationBudget')?.value || 0).toLocaleString()}`],
+        ["WALT", `${document.getElementById('walt')?.value || 5} years`],
+        ["Number of Tenants", document.getElementById('numTenants')?.value || 1]
       ];
     }
 
@@ -2597,6 +2840,17 @@
       if (scoreBreakdownRows.length > 0) {
         y = addPdfSection3Col(doc, "Score Breakdown", scoreBreakdownRows, y);
       }
+
+      y = addPdfSection(doc, "Advanced Inputs", [
+        ["Occupancy", `${document.getElementById('occupancyPct')?.value || 95}%`],
+        ["NOI Basis", document.getElementById('noiBasis')?.value === 'proforma' ? 'Pro-Forma (15% haircut applied)' : 'In-Place'],
+        ["CapEx Reserve", `$${document.getElementById('capexReserve')?.value || '0.50'}/SF/yr`],
+        ["Leases Expiring <24mo", `${document.getElementById('leaseExpiryPct')?.value || 0}%`],
+        ["Anchor Tenant Credit", document.getElementById('tenantCredit')?.value || 'regional'],
+        ["Renovation Budget", `$${Number(document.getElementById('renovationBudget')?.value || 0).toLocaleString()}`],
+        ["WALT", `${document.getElementById('walt')?.value || 5} years`],
+        ["Number of Tenants", document.getElementById('numTenants')?.value || 1]
+      ], y);
 
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
