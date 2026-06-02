@@ -1478,6 +1478,309 @@
       background: rgba(26, 107, 80, 0.22);
       border-color: rgba(255,255,255,0.5);
     }
+
+    .ai-intel-section {
+      margin-top: 18px;
+    }
+
+    .ai-intel-trigger-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: linear-gradient(135deg, #f7fbf9, #f2f7fb);
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+
+    .ai-intel-trigger-bar:hover {
+      border-color: var(--brand);
+      box-shadow: 0 8px 24px rgba(26, 107, 80, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .ai-intel-trigger-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .ai-intel-icon {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), var(--steel));
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    .ai-intel-label {
+      color: var(--ink);
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .ai-intel-sublabel {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    .ai-intel-run-btn {
+      flex: 0 0 auto;
+    }
+
+    .ai-intel-panel {
+      margin-top: 12px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      animation: aiIntelFadeIn 0.35s ease;
+    }
+
+    .ai-intel-panel[hidden] {
+      display: none;
+    }
+
+    .ai-intel-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .ai-intel-panel-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--ink);
+      font-weight: 800;
+    }
+
+    .ai-intel-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 8px;
+      border: 1px solid rgba(26, 107, 80, 0.18);
+      border-radius: 999px;
+      background: #edf7f3;
+      color: var(--brand-dark);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .ai-intel-close-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+    }
+
+    .ai-intel-close-btn:hover {
+      border-color: var(--brand);
+      color: var(--brand-dark);
+      background: #f7fbf9;
+    }
+
+    .ai-intel-body {
+      display: grid;
+      gap: 12px;
+    }
+
+    .ai-intel-loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .ai-intel-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(26, 107, 80, 0.16);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: aiSpin 0.7s linear infinite;
+      flex: 0 0 auto;
+    }
+
+    @keyframes aiSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    .ai-intel-error {
+      padding: 12px 14px;
+      border: 1px solid #e6c8c3;
+      border-radius: 8px;
+      background: #fdf3f2;
+      color: #5c1f1a;
+      line-height: 1.5;
+    }
+
+    .ai-intel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+
+    .ai-intel-metric {
+      display: grid;
+      gap: 6px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+    }
+
+    .ai-intel-metric-label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .ai-intel-metric-value {
+      color: var(--ink);
+      font-size: 1.05rem;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .ai-intel-metric-note {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .ai-intel-flags {
+      display: grid;
+      gap: 10px;
+    }
+
+    .ai-intel-flag {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      line-height: 1.45;
+    }
+
+    .ai-intel-flag-icon {
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    .ai-intel-flag.bullish {
+      background: #edf7f3;
+      border-color: #c3e6d6;
+      color: #1a5c3e;
+    }
+
+    .ai-intel-flag.bullish .ai-intel-flag-icon {
+      background: #d6efe3;
+      color: #1a5c3e;
+    }
+
+    .ai-intel-flag.neutral {
+      background: #f7f7ed;
+      border-color: #e6e4c3;
+      color: #4d4a1a;
+    }
+
+    .ai-intel-flag.neutral .ai-intel-flag-icon {
+      background: #efedd0;
+      color: #4d4a1a;
+    }
+
+    .ai-intel-flag.bearish {
+      background: #fdf3f2;
+      border-color: #e6c8c3;
+      color: #5c1f1a;
+    }
+
+    .ai-intel-flag.bearish .ai-intel-flag-icon {
+      background: #f3ddd8;
+      color: #5c1f1a;
+    }
+
+    .ai-intel-thesis {
+      display: grid;
+      gap: 6px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      line-height: 1.55;
+    }
+
+    .ai-intel-thesis-label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .ai-intel-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+
+    .ai-intel-disclaimer {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
+
+    .ai-intel-refresh-btn {
+      flex: 0 0 auto;
+    }
+
+    @keyframes aiIntelFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -1908,6 +2211,33 @@
               <span>Offer for Target Cap Rate</span>
               <strong id="targetOfferOutput">—</strong>
               <small class="metric-note" id="targetOfferNote">Enter target cap rate above</small>
+            </div>
+          </div>
+
+          <!-- Tier 5: AI Market Intelligence -->
+          <div class="ai-intel-section" id="aiIntelSection">
+            <div class="ai-intel-trigger-bar" id="aiIntelTriggerBar">
+              <div class="ai-intel-trigger-left">
+                <div class="ai-intel-icon">✦</div>
+                <div>
+                  <div class="ai-intel-label">AI Market Intelligence</div>
+                  <div class="ai-intel-sublabel">Cap rates · Supply/demand · Risk flags · Thesis</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary ai-intel-run-btn" id="aiIntelRunBtn">
+                Run Analysis
+              </button>
+            </div>
+            <div class="ai-intel-panel" id="aiIntelPanel" hidden>
+              <div class="ai-intel-panel-header">
+                <div class="ai-intel-panel-title">
+                  <span>✦</span>
+                  <span>Market Intelligence</span>
+                  <span class="ai-intel-badge">AI</span>
+                </div>
+                <button type="button" class="ai-intel-close-btn" id="aiIntelCloseBtn">✕ Close</button>
+              </div>
+              <div class="ai-intel-body" id="aiIntelBody"></div>
             </div>
           </div>
 
@@ -3640,6 +3970,116 @@
         }
       }, 80);
     });
+
+    // ── AI MARKET INTELLIGENCE ──────────────────────────────────
+    (function () {
+      const runBtn     = document.getElementById('aiIntelRunBtn');
+      const panel      = document.getElementById('aiIntelPanel');
+      const body       = document.getElementById('aiIntelBody');
+      const closeBtn   = document.getElementById('aiIntelCloseBtn');
+      const triggerBar = document.getElementById('aiIntelTriggerBar');
+
+      triggerBar.addEventListener('click', (e) => {
+        if (!runBtn.contains(e.target)) runAnalysis();
+      });
+      runBtn.addEventListener('click', (e) => { e.stopPropagation(); runAnalysis(); });
+      closeBtn.addEventListener('click', () => { panel.hidden = true; });
+
+      function getDealContext() {
+        const get = (id) => document.getElementById(id)?.value?.trim() || '';
+        const txt = (id) => document.getElementById(id)?.textContent?.replace('—','').trim() || '';
+        const submarket = get('addressLine2')
+          ? get('addressLine2').replace(/\d{5}(-\d{4})?/, '').replace(/,\s*$/, '').trim()
+          : 'unspecified submarket';
+        return {
+          assetType:    get('assetType')    || 'Industrial',
+          submarket,
+          price:        get('price')        || 'not provided',
+          sqft:         get('sqft')         || 'not provided',
+          yearBuilt:    get('yearBuilt')    || 'not provided',
+          capRate:      get('advertisedCapRate') || 'not provided',
+          noi:          get('advertisedNoi') || 'not provided',
+          holdPeriod:   get('holdingPeriod') || '5',
+          occupancy:    get('occupancyPct') || '95',
+          tenantCredit: get('tenantCredit') || 'regional',
+          walt:         get('walt')         || '5',
+          irr:          txt('irrOutput2')   || 'not computed',
+          dscr:         txt('dscrOutput')   || 'not computed',
+        };
+      }
+
+      async function runAnalysis() {
+        const ctx = getDealContext();
+        panel.hidden = false;
+        body.innerHTML = `
+          <div class="ai-intel-loading">
+            <div class="ai-intel-spinner"></div>
+            <span>Analyzing ${ctx.assetType} market in ${ctx.submarket}…</span>
+          </div>`;
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        try {
+          const res = await fetch('/api/market-intel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(ctx)
+          });
+          if (!res.ok) {
+            const e = await res.json().catch(() => ({}));
+            throw new Error(e.error || `API error ${res.status}`);
+          }
+          const data = await res.json();
+          renderResult(data, ctx);
+        } catch (err) {
+          body.innerHTML = `
+            <div class="ai-intel-error">
+              <strong>Analysis unavailable.</strong> ${err.message}
+            </div>`;
+        }
+      }
+
+      function icon(s) { return s === 'bullish' ? '↑' : s === 'bearish' ? '↓' : '→'; }
+
+      function renderResult(r, ctx) {
+        const trendArrow = r.capRateTrend === 'compressing' ? '↓' : r.capRateTrend === 'expanding' ? '↑' : '→';
+        const flagsHtml = (r.flags || []).map(f =>
+          `<div class="ai-intel-flag ${f.sentiment}">
+            <span class="ai-intel-flag-icon">${icon(f.sentiment)}</span>
+            <span>${f.text}</span>
+           </div>`
+        ).join('');
+
+        body.innerHTML = `
+          <div class="ai-intel-grid">
+            <div class="ai-intel-metric">
+              <span class="ai-intel-metric-label">Market Cap Rate Range</span>
+              <span class="ai-intel-metric-value">${r.capRateRange || '—'}</span>
+              <span class="ai-intel-metric-note">${trendArrow} ${r.capRateTrend || ''} · ${r.capRateTrendNote || ''}</span>
+            </div>
+            <div class="ai-intel-metric">
+              <span class="ai-intel-metric-label">Supply / Demand</span>
+              <span class="ai-intel-metric-value">${r.supplyDemandSignal || '—'}</span>
+              <span class="ai-intel-metric-note">${r.supplyDemandNote || ''}</span>
+            </div>
+            <div class="ai-intel-metric">
+              <span class="ai-intel-metric-label">Rent Growth Outlook</span>
+              <span class="ai-intel-metric-value">${r.rentGrowthOutlook || '—'}</span>
+              <span class="ai-intel-metric-note">${r.rentGrowthNote || ''}</span>
+            </div>
+          </div>
+          <div class="ai-intel-flags">${flagsHtml}</div>
+          <div class="ai-intel-thesis">
+            <span class="ai-intel-thesis-label">Investment Thesis</span>
+            ${r.thesis || ''}
+          </div>
+          <div class="ai-intel-footer">
+            <span class="ai-intel-disclaimer">AI-generated · ${ctx.assetType} · ${ctx.submarket} · Research only</span>
+            <button type="button" class="btn btn-secondary ai-intel-refresh-btn" id="aiIntelRefreshBtn">↺ Refresh</button>
+          </div>`;
+
+        document.getElementById('aiIntelRefreshBtn')?.addEventListener('click', runAnalysis);
+      }
+    })();
 
     updateDealPreview();
     initFredRates();
