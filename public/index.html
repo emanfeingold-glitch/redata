@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1336,7 +1336,7 @@
       }
 
       .model-copy h2::before {
-        content: "REDATA â€” Deal Analysis Summary";
+        content: "REDATA — Deal Analysis Summary";
         display: block;
         font-size: 0.84rem;
         font-weight: 700;
@@ -1616,7 +1616,7 @@
         <div class="model-copy">
           <h2>Score a deal in under a minute.</h2>
           <p>
-            Enter what's visible on any LoopNet listing â€” asking price, square footage,
+            Enter what's visible on any LoopNet listing — asking price, square footage,
             year built, and asset type. REDATA estimates NOI, structures the debt,
             projects exit value, and scores the deal across four weighted criteria.
           </p>
@@ -1757,12 +1757,12 @@
           <div class="cap-rate-comparison" aria-label="Cap rate story">
             <div class="cap-rate-item">
               <span>Going-In Cap Rate</span>
-              <strong id="goingInCapRateOutput">â€”</strong>
+              <strong id="goingInCapRateOutput">—</strong>
             </div>
-            <div class="cap-rate-arrow">â†’</div>
+            <div class="cap-rate-arrow">→</div>
             <div class="cap-rate-item">
               <span>Est. Exit Cap Rate</span>
-              <strong id="exitCapRateOutput">â€”</strong>
+              <strong id="exitCapRateOutput">—</strong>
               <small class="metric-note">+0.35% expansion assumed</small>
             </div>
           </div>
@@ -1772,21 +1772,21 @@
           <div class="estimate" aria-live="polite">
             <div>
               <span>Levered IRR</span>
-              <strong id="irrOutput2">â€”</strong>
+              <strong id="irrOutput2">—</strong>
               <small class="metric-note">On equity after debt service</small>
             </div>
             <div>
               <span>Exit Value</span>
-              <strong id="exitValueOutput">â€”</strong>
+              <strong id="exitValueOutput">—</strong>
             </div>
             <div>
               <span>Value Spread</span>
-              <strong id="spreadOutput">â€”</strong>
+              <strong id="spreadOutput">—</strong>
             </div>
           </div>
 
           <p class="status-bar" id="rateStatusBar">
-            Loading live ratesâ€¦
+            Loading live rates…
           </p>
 
           <!-- Tier 2: Debt & Structure -->
@@ -1794,19 +1794,19 @@
           <div class="estimate secondary-estimate" aria-live="polite">
             <div>
               <span>DSCR</span>
-              <strong id="dscrOutput">â€”</strong>
+              <strong id="dscrOutput">—</strong>
             </div>
             <div>
               <span>Debt Yield</span>
-              <strong id="debtYieldOutput">â€”</strong>
+              <strong id="debtYieldOutput">—</strong>
             </div>
             <div>
               <span>Est. Loan Amount</span>
-              <strong id="loanAmountOutput">â€”</strong>
+              <strong id="loanAmountOutput">—</strong>
             </div>
             <div>
               <span>Est. Debt Service</span>
-              <strong id="debtServiceOutput">â€”</strong>
+              <strong id="debtServiceOutput">—</strong>
             </div>
           </div>
 
@@ -1815,26 +1815,26 @@
           <div class="estimate secondary-estimate" aria-live="polite">
             <div>
               <span>NOI</span>
-              <strong id="noiOutput">â€”</strong>
+              <strong id="noiOutput">—</strong>
             </div>
             <div>
               <span>Exit NOI</span>
-              <strong id="exitNoiOutput">â€”</strong>
+              <strong id="exitNoiOutput">—</strong>
               <small class="metric-note">Grown at 2.5% annually</small>
             </div>
             <div>
               <span>Price per SF</span>
-              <strong id="pricePerSfOutput">â€”</strong>
+              <strong id="pricePerSfOutput">—</strong>
             </div>
             <div>
               <span>NOI per SF</span>
-              <strong id="noiPerSfOutput">â€”</strong>
+              <strong id="noiPerSfOutput">—</strong>
             </div>
           </div>
 
           <div class="deal-score-result" id="dealScoreResult" aria-live="polite">
             <span>Deal Score</span>
-            <strong id="dealScoreOutput">â€”</strong>
+            <strong id="dealScoreOutput">—</strong>
             <p id="dealVerdictOutput">Enter assumptions to score the deal</p>
             <div class="score-breakdown" id="scoreBreakdown"></div>
           </div>
@@ -1890,7 +1890,7 @@
 
   <footer class="site-footer">
     <p>REDATA</p>
-    <p>Â© 2026 REDATA</p>
+    <p>© 2026 REDATA</p>
     <p>Commercial real estate intelligence platform concept.</p>
   </footer>
 
@@ -1966,7 +1966,7 @@
       return monthly * 12;
     }
 
-    // Live rate state â€” populated by initFredRates() on page load
+    // Live rate state — populated by initFredRates() on page load
     const liveRates = {
       loaded: false,
       sofr: null,
@@ -2008,7 +2008,7 @@
         updateDealPreview();
         updateRateStatusUI(sofr, tenYr);
       } catch (err) {
-        // Silently fall back to hardcoded constants â€” model still works
+        // Silently fall back to hardcoded constants — model still works
         console.warn("FRED rate fetch failed, using hardcoded defaults:", err.message);
         updateRateStatusUI(null, null);
       }
@@ -2021,7 +2021,7 @@
         el.textContent = "Debt assumptions: using baseline defaults";
         el.style.color = "var(--muted)";
       } else {
-        el.textContent = `Live rates loaded â€” SOFR ${sofr.toFixed(2)}% Â· 10-Yr Treasury ${tenYr.toFixed(2)}%`;
+        el.textContent = `Live rates loaded — SOFR ${sofr.toFixed(2)}% · 10-Yr Treasury ${tenYr.toFixed(2)}%`;
         el.style.color = "var(--brand-dark)";
       }
     }
@@ -2056,7 +2056,7 @@
           statusEl.textContent = "No comps found within 5 miles. Score using model defaults.";
           statusEl.style.color = "var(--muted)";
         } else {
-          statusEl.textContent = `${data.compCount} comp${data.compCount > 1 ? "s" : ""} found within ${data.radiusMiles} mile${data.radiusMiles > 1 ? "s" : ""} â€” median ${data.medianPricePerSqft ? "$" + data.medianPricePerSqft.toFixed(0) + "/SF" : "N/A"}`;
+          statusEl.textContent = `${data.compCount} comp${data.compCount > 1 ? "s" : ""} found within ${data.radiusMiles} mile${data.radiusMiles > 1 ? "s" : ""} — median ${data.medianPricePerSqft ? "$" + data.medianPricePerSqft.toFixed(0) + "/SF" : "N/A"}`;
           statusEl.style.color = "var(--brand-dark)";
         }
 
@@ -2540,7 +2540,7 @@
         if (isCurrent) tr.classList.add("is-current");
 
         tr.innerHTML = `
-          <td>${formatLabel(val)}${isCurrent ? " â—" : ""}</td>
+          <td>${formatLabel(val)}${isCurrent ? " ●" : ""}</td>
           <td>${metrics.goingInCapRatePct.toFixed(1)}%</td>
           <td>${metrics.irr.toFixed(1)}%</td>
           <td>${metrics.dscr.toFixed(2)}</td>
@@ -2568,10 +2568,10 @@
         ];
         placeholders.forEach(id => {
           const el = document.getElementById(id);
-          if (el) el.textContent = "â€”";
+          if (el) el.textContent = "—";
         });
         spreadOutput.style.color = "var(--muted)";
-        dealScoreOutput.textContent = "â€”";
+        dealScoreOutput.textContent = "—";
         dealScoreOutput.style.color = "var(--muted)";
         dealScoreResult.style.borderColor = "var(--line)";
         dealVerdictOutput.textContent = "Enter an asking price to score this deal";
@@ -3025,7 +3025,7 @@
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(17);
-      doc.text("REDATA â€” Deal Analysis", 36, 31);
+      doc.text("REDATA — Deal Analysis", 36, 31);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9.5);
       doc.text(`${assetType} | Asking Price: $${priceText}`, 36, 50);
@@ -3241,7 +3241,7 @@
         skipped.push('Cap Rate');
       }
 
-      // â”€â”€ OCCUPANCY % â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── OCCUPANCY % ───────────────────────────────────────────────────
       // Matches: Percent Leased\n78%  in the Property Facts table
       const occupancyMatch =
         text.match(/Percent Leased\s*\n\s*([\d.]+)%/i);
