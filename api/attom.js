@@ -35,6 +35,23 @@ function toNumber(value) {
   return Number.isFinite(number) ? number : 0;
 }
 
+function toNullableNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+async function parseJsonSafely(responseResult) {
+  if (responseResult.status !== "fulfilled" || !responseResult.value?.ok) {
+    return null;
+  }
+
+  try {
+    return await responseResult.value.json();
+  } catch {
+    return null;
+  }
+}
+
 function processComps(properties) {
   const propertyList = Array.isArray(properties) ? properties : [];
   const commercialProperties = propertyList.filter((p) => {
@@ -156,12 +173,34 @@ export default async function handler(req, res) {
     if (validComps.length > 0) break;
   }
 
+  const [avmRes, taxRes] = await Promise.allSettled([
+    fetch(`https://api.gateway.attomdata.com/propertyapi/v1.0.0/avm/detail?address1=${encodeURIComponent(address1)}&address2=${encodeURIComponent(address2)}`, {
+      headers: { apikey: process.env.ATTOM_API_KEY, accept: "application/json" }
+    }),
+    fetch(`https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/taxes?address1=${encodeURIComponent(address1)}&address2=${encodeURIComponent(address2)}`, {
+      headers: { apikey: process.env.ATTOM_API_KEY, accept: "application/json" }
+    })
+  ]);
+
+  const avmData = await parseJsonSafely(avmRes);
+  const taxData = await parseJsonSafely(taxRes);
+  const avmAmount = avmData?.property?.[0]?.avm?.amount;
+  const taxAssessment = taxData?.property?.[0]?.assessment?.tax;
+  const avmValue = toNullableNumber(avmAmount?.value);
+  const avmHigh = toNullableNumber(avmAmount?.high);
+  const avmLow = toNullableNumber(avmAmount?.low);
+  const annualTaxes = toNullableNumber(taxAssessment?.taxamt);
+
   if (!lastData || lastData.comps.length === 0) {
     return res.status(200).json({
       comps: [],
       medianPricePerSqft: null,
       compCount: 0,
       radiusMiles: usedRadius,
+      avmValue,
+      avmHigh,
+      avmLow,
+      annualTaxes,
     });
   }
 
@@ -170,5 +209,9 @@ export default async function handler(req, res) {
     medianPricePerSqft: computeMedian(lastData.comps.map((comp) => comp.pricePerSqft)),
     compCount: lastData.comps.length,
     radiusMiles: usedRadius,
+    avmValue,
+    avmHigh,
+    avmLow,
+    annualTaxes,
   });
 }

@@ -1832,6 +1832,27 @@
             </div>
           </div>
 
+          <!-- Tier 4: ATTOM Intelligence (conditionally visible) -->
+          <div id="attomIntelSection" style="display:none;">
+            <p class="results-tier-label">ATTOM intelligence</p>
+            <div class="estimate secondary-estimate" aria-live="polite">
+              <div>
+                <span>AVM Estimate</span>
+                <strong id="avmValueOutput">—</strong>
+                <small class="metric-note" id="avmVsAskNote"></small>
+              </div>
+              <div>
+                <span>AVM Range</span>
+                <strong id="avmRangeOutput">—</strong>
+              </div>
+              <div>
+                <span>Annual Taxes</span>
+                <strong id="annualTaxesOutput">—</strong>
+                <small class="metric-note" id="taxesInNoiNote"></small>
+              </div>
+            </div>
+          </div>
+
           <div class="deal-score-result" id="dealScoreResult" aria-live="polite">
             <span>Deal Score</span>
             <strong id="dealScoreOutput">—</strong>
@@ -1979,7 +2000,11 @@
       loaded: false,
       medianPricePerSqft: null,
       compCount: 0,
-      comps: []
+      comps: [],
+      avmValue: null,
+      avmHigh: null,
+      avmLow: null,
+      annualTaxes: null
     };
 
     async function initFredRates() {
@@ -2051,6 +2076,10 @@
         compsData.medianPricePerSqft = data.medianPricePerSqft;
         compsData.compCount = data.compCount;
         compsData.comps = data.comps;
+        compsData.avmValue = data.avmValue ?? null;
+        compsData.avmHigh = data.avmHigh ?? null;
+        compsData.avmLow = data.avmLow ?? null;
+        compsData.annualTaxes = data.annualTaxes ?? null;
 
         if (data.compCount === 0) {
           statusEl.textContent = "No comps found within 5 miles. Score using model defaults.";
@@ -2564,7 +2593,8 @@
           "irrOutput2", "goingInCapRateOutput", "exitCapRateOutput",
           "exitValueOutput", "spreadOutput", "dscrOutput", "debtYieldOutput",
           "loanAmountOutput", "debtServiceOutput", "noiOutput",
-          "exitNoiOutput", "pricePerSfOutput", "noiPerSfOutput"
+          "exitNoiOutput", "pricePerSfOutput", "noiPerSfOutput",
+          "avmValueOutput", "avmRangeOutput", "annualTaxesOutput"
         ];
         placeholders.forEach(id => {
           const el = document.getElementById(id);
@@ -2623,6 +2653,11 @@
       // Apply advanced NOI adjustments.
       noi = (noi * advancedNOIMultiplier) - capexAnnual;
       noi = Math.max(0, noi);
+
+      // Subtract real property taxes from ATTOM if available (replaces modeled assumption).
+      if (compsData.annualTaxes && compsData.annualTaxes > 0) {
+        noi = Math.max(0, noi - compsData.annualTaxes);
+      }
 
       // Apply renovation budget to price basis.
       const effectivePrice = price + advancedBasisAdder;
@@ -2716,6 +2751,47 @@
         `$${noiPerSf.toFixed(2)}/SF`;
       const yearBuilt = Number(yearBuiltInput.value) || 0;
       const yearBuiltPenalty = getYearBuiltPenalty(yearBuilt);
+
+      // Render ATTOM intelligence section if data is available
+      const attomSection = document.getElementById('attomIntelSection');
+      const avmValueEl = document.getElementById('avmValueOutput');
+      const avmRangeEl = document.getElementById('avmRangeOutput');
+      const avmVsAskEl = document.getElementById('avmVsAskNote');
+      const taxesEl = document.getElementById('annualTaxesOutput');
+      const taxesNoteEl = document.getElementById('taxesInNoiNote');
+
+      if (compsData.avmValue || compsData.annualTaxes) {
+        attomSection.style.display = 'block';
+
+        if (compsData.avmValue) {
+          avmValueEl.textContent = money.format(compsData.avmValue);
+          const avmDiff = ((price - compsData.avmValue) / compsData.avmValue * 100);
+          const dir = avmDiff > 0 ? 'above' : 'below';
+          avmVsAskEl.textContent = `Ask is ${Math.abs(avmDiff).toFixed(1)}% ${dir} AVM`;
+          avmVsAskEl.style.color = avmDiff > 10 ? '#9f342f' : avmDiff < -5 ? 'var(--brand-dark)' : 'var(--muted)';
+        } else {
+          avmValueEl.textContent = '—';
+          avmVsAskEl.textContent = '';
+        }
+
+        if (compsData.avmValue && compsData.avmLow && compsData.avmHigh) {
+          avmRangeEl.textContent = `${money.format(compsData.avmLow)} – ${money.format(compsData.avmHigh)}`;
+        } else {
+          avmRangeEl.textContent = '—';
+        }
+
+        if (compsData.annualTaxes) {
+          taxesEl.textContent = money.format(compsData.annualTaxes);
+          taxesNoteEl.textContent = 'Deducted from NOI';
+          taxesNoteEl.style.color = 'var(--muted)';
+        } else {
+          taxesEl.textContent = '—';
+          taxesNoteEl.textContent = '';
+        }
+      } else {
+        attomSection.style.display = 'none';
+      }
+
       const adjustedScore = Math.max(0, rawScore - yearBuiltPenalty);
       updateScoreDisplay(adjustedScore, { ...scoreMetrics, price }, subScores);
       buildSensitivityTable();
@@ -3171,6 +3247,12 @@
       compsData.medianPricePerSqft = null;
       compsData.compCount = 0;
       compsData.comps = [];
+      compsData.avmValue = null;
+      compsData.avmHigh = null;
+      compsData.avmLow = null;
+      compsData.annualTaxes = null;
+      const attomSection = document.getElementById('attomIntelSection');
+      if (attomSection) attomSection.style.display = 'none';
       const compsStatusBar = document.getElementById('compsStatusBar');
       if (compsStatusBar) compsStatusBar.textContent = '';
 
