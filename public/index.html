@@ -513,6 +513,31 @@
       border: 1px solid var(--line);
     }
 
+    .basic-calc-input-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .basic-calc-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .basic-calc-label input {
+      width: 120px;
+      min-height: 38px;
+      padding: 0 10px;
+      font-size: 0.9rem;
+    }
+
     .advanced-toggle {
       margin: 18px 0 0;
     }
@@ -1853,6 +1878,39 @@
             </div>
           </div>
 
+          <div class="basic-calc-input-row">
+            <label for="targetCapRate" class="basic-calc-label">
+              Target Cap Rate %
+              <input id="targetCapRate" type="number" min="0" step="0.1"
+                     placeholder="e.g. 6.5" autocomplete="off" />
+            </label>
+          </div>
+
+          <!-- Basic Calculations -->
+          <p class="results-tier-label">Basic calculations</p>
+          <div class="estimate secondary-estimate" aria-live="polite">
+            <div>
+              <span>Cash on Cash Return</span>
+              <strong id="cocOutput">—</strong>
+              <small class="metric-note">Annual pre-tax cash flow / equity deployed</small>
+            </div>
+            <div>
+              <span>Monthly Profit After Debt</span>
+              <strong id="monthlyProfitOutput">—</strong>
+              <small class="metric-note">Monthly NOI minus monthly debt service</small>
+            </div>
+            <div>
+              <span>Cash Down</span>
+              <strong id="cashDownOutput">—</strong>
+              <small class="metric-note" id="cashDownLtvNote">Based on asset-type LTV</small>
+            </div>
+            <div>
+              <span>Offer for Target Cap Rate</span>
+              <strong id="targetOfferOutput">—</strong>
+              <small class="metric-note" id="targetOfferNote">Enter target cap rate above</small>
+            </div>
+          </div>
+
           <div class="deal-score-result" id="dealScoreResult" aria-live="polite">
             <span>Deal Score</span>
             <strong id="dealScoreOutput">—</strong>
@@ -2594,12 +2652,19 @@
           "exitValueOutput", "spreadOutput", "dscrOutput", "debtYieldOutput",
           "loanAmountOutput", "debtServiceOutput", "noiOutput",
           "exitNoiOutput", "pricePerSfOutput", "noiPerSfOutput",
-          "avmValueOutput", "avmRangeOutput", "annualTaxesOutput"
+          "avmValueOutput", "avmRangeOutput", "annualTaxesOutput",
+          "cocOutput", "monthlyProfitOutput", "cashDownOutput", "targetOfferOutput"
         ];
         placeholders.forEach(id => {
           const el = document.getElementById(id);
           if (el) el.textContent = "—";
         });
+        ["cocOutput", "monthlyProfitOutput", "targetOfferNote"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.color = "";
+        });
+        const targetNoteEl = document.getElementById("targetOfferNote");
+        if (targetNoteEl) targetNoteEl.textContent = "Enter target cap rate above";
         spreadOutput.style.color = "var(--muted)";
         dealScoreOutput.textContent = "—";
         dealScoreOutput.style.color = "var(--muted)";
@@ -2749,6 +2814,79 @@
         `$${pricePerSf.toFixed(0)}/SF`;
       document.querySelector("#noiPerSfOutput").textContent =
         `$${noiPerSf.toFixed(2)}/SF`;
+
+      // ── Basic Calculations ─────────────────────────────────────────────────────
+
+      // Inputs
+      const bcPrice    = price;          // already parsed above in this function
+      const bcNoi      = noi;            // already computed above
+      const bcLtv      = assumptions.ltv;
+      const bcDC       = assumptions.debtConstant; // annual debt service / loan amt
+
+      // Cash Down
+      const bcLoanAmt  = effectivePrice * bcLtv;
+      const bcEquity   = effectivePrice - bcLoanAmt;  // = effectivePrice * (1 - ltv)
+      const closingCosts = bcPrice * 0.02;            // 2% of asking price
+      const totalCashIn  = bcEquity + closingCosts;
+
+      // Annual debt service (same as debtService computed above — reuse it)
+      const bcAnnualDS   = debtService;
+
+      // Annual pre-tax cash flow
+      const bcAnnualCF   = bcNoi - bcAnnualDS;
+
+      // Cash on Cash
+      const bcCoC = totalCashIn > 0 ? (bcAnnualCF / totalCashIn) * 100 : 0;
+
+      // Monthly profit after debt service
+      const bcMonthlyProfit = (bcNoi / 12) - (bcAnnualDS / 12);
+
+      // Target offer price
+      const targetCapRatePct = parseFloat(document.getElementById('targetCapRate').value);
+      const targetOffer = (!isNaN(targetCapRatePct) && targetCapRatePct > 0)
+        ? bcNoi / (targetCapRatePct / 100)
+        : null;
+
+      // Render
+      const cocEl           = document.getElementById('cocOutput');
+      const monthlyProfitEl = document.getElementById('monthlyProfitOutput');
+      const cashDownEl      = document.getElementById('cashDownOutput');
+      const cashDownNoteEl  = document.getElementById('cashDownLtvNote');
+      const targetOfferEl   = document.getElementById('targetOfferOutput');
+      const targetNoteEl    = document.getElementById('targetOfferNote');
+
+      if (bcPrice > 0) {
+        cocEl.textContent = `${bcCoC.toFixed(2)}%`;
+        cocEl.style.color = bcCoC >= 8 ? 'var(--brand-dark)' : bcCoC >= 5 ? 'var(--accent)' : '#9f342f';
+
+        monthlyProfitEl.textContent = money.format(bcMonthlyProfit);
+        monthlyProfitEl.style.color = bcMonthlyProfit >= 0 ? 'var(--brand-dark)' : '#9f342f';
+
+        cashDownEl.textContent = money.format(bcEquity);
+        cashDownNoteEl.textContent = `${(bcLtv * 100).toFixed(0)}% LTV · 2% closing costs est.`;
+
+        if (targetOffer !== null) {
+          targetOfferEl.textContent = money.format(targetOffer);
+          const overPriced = bcPrice > targetOffer;
+          targetNoteEl.textContent = overPriced
+            ? `⚠ Ask exceeds target — cap rate compressed`
+            : `Offer ≤ ${money.format(targetOffer)} for ${targetCapRatePct.toFixed(2)}% cap`;
+          targetNoteEl.style.color = overPriced ? '#9f342f' : 'var(--brand-dark)';
+        } else {
+          targetOfferEl.textContent = '—';
+          targetNoteEl.textContent  = 'Enter target cap rate above';
+          targetNoteEl.style.color  = '';
+        }
+      } else {
+        cocEl.textContent           = '—';
+        monthlyProfitEl.textContent = '—';
+        cashDownEl.textContent      = '—';
+        targetOfferEl.textContent   = '—';
+        [cocEl, monthlyProfitEl].forEach(el => el.style.color = '');
+        document.getElementById('cashDownLtvNote').style.color = '';
+        targetNoteEl.style.color = '';
+      }
+
       const yearBuilt = Number(yearBuiltInput.value) || 0;
       const yearBuiltPenalty = getYearBuiltPenalty(yearBuilt);
 
@@ -2805,6 +2943,7 @@
       advertisedNoiInput,
       advertisedCapRateInput,
       holdingPeriodInput,
+      document.getElementById('targetCapRate'),
       document.getElementById('occupancyPct'),
       document.getElementById('noiBasis'),
       document.getElementById('capexReserve'),
@@ -2952,6 +3091,12 @@
         ["NOI/SF", getOutputText("noiPerSfOutput")],
         ["Going-In Cap Rate", getOutputText("goingInCapRateOutput")],
         ["Exit Cap Rate", getOutputText("exitCapRateOutput")],
+        ["", ""],
+        ["BASIC CALCULATIONS", ""],
+        ["Cash on Cash Return", getOutputText("cocOutput")],
+        ["Monthly Profit After Debt", getOutputText("monthlyProfitOutput")],
+        ["Cash Down (Equity)", getOutputText("cashDownOutput")],
+        ["Offer for Target Cap Rate", getOutputText("targetOfferOutput")],
         ["", ""],
         ["DEAL SCORE", ""],
         ["Score", getOutputText("dealScoreOutput")],
@@ -3129,6 +3274,13 @@
         ["Exit Cap Rate", getOutputText("exitCapRateOutput")]
       ], y);
 
+      y = addPdfSection(doc, "Basic Calculations", [
+        ["Cash on Cash Return", getOutputText("cocOutput")],
+        ["Monthly Profit After Debt", getOutputText("monthlyProfitOutput")],
+        ["Cash Down (Equity)", getOutputText("cashDownOutput")],
+        ["Offer for Target Cap Rate", getOutputText("targetOfferOutput")]
+      ], y);
+
       y = addPdfSection(doc, "Deal Score", [
         ["Score", `${getOutputText("dealScoreOutput")} - ${getOutputText("dealVerdictOutput")}`]
       ], y);
@@ -3221,6 +3373,7 @@
       document.getElementById('advertisedNoi').value = '';
       document.getElementById('advertisedCapRate').value = '';
       document.getElementById('holdingPeriod').value = '5';
+      document.getElementById('targetCapRate').value = '';
       document.getElementById('addressLine1').value = '';
       document.getElementById('addressLine2').value = '';
 
