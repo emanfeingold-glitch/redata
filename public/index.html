@@ -1651,15 +1651,16 @@
 
     .ai-intel-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: 1fr;
       gap: 10px;
     }
 
     .ai-intel-metric {
       display: grid;
       gap: 6px;
-      padding: 14px;
+      padding: 16px 18px;
       border: 1px solid var(--line);
+      border-left: 3px solid var(--brand);
       border-radius: 8px;
       background: var(--paper);
     }
@@ -1680,9 +1681,10 @@
     }
 
     .ai-intel-metric-note {
-      color: var(--muted);
-      font-size: 0.9rem;
-      line-height: 1.45;
+      color: var(--ink);
+      font-size: 0.92rem;
+      line-height: 1.6;
+      opacity: 0.82;
     }
 
     .ai-intel-flags {
