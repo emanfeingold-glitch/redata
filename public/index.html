@@ -757,6 +757,23 @@
       color: #9f342f;
     }
 
+    .loopnet-parse-status.loading::after {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-left: 8px;
+      border: 2px solid var(--muted);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: loopnetSpin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes loopnetSpin {
+      to { transform: rotate(360deg); }
+    }
+
     .loopnet-field-highlight {
       animation: loopnetPulse 1.4s ease;
     }
@@ -3992,8 +4009,9 @@
       }
 
       parseBtn.disabled = true;
-      loopnetParseStatus.textContent = 'Analyzing listing with AI… (~5 seconds)';
+      loopnetParseStatus.textContent = 'Analyzing listing with AI… (up to 30 seconds)';
       loopnetParseStatus.className = 'loopnet-parse-status';
+      loopnetParseStatus.classList.add('loading');
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 45000);
@@ -4045,9 +4063,10 @@
         intelData.fields = null;
         intelData.intel = null;
 
-        loopnetParseStatus.textContent = 'AI parse unavailable — used standard parser';
-        loopnetParseStatus.className = 'loopnet-parse-status';
+        loopnetParseStatus.textContent = 'AI parse unavailable — ' + (err?.message || 'unknown error');
+        loopnetParseStatus.className = 'loopnet-parse-status error';
       } finally {
+        loopnetParseStatus.classList.remove('loading');
         clearTimeout(timeoutId);
         parseBtn.disabled = false;
         setTimeout(() => closeLoopnetModal(), 2200);
