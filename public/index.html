@@ -1492,13 +1492,6 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: linear-gradient(135deg, #f7fbf9, #f2f7fb);
-      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
-    }
-
-    .ai-intel-trigger-bar:hover {
-      border-color: var(--brand);
-      box-shadow: 0 8px 24px rgba(26, 107, 80, 0.12);
-      transform: translateY(-1px);
     }
 
     .ai-intel-trigger-left {
@@ -2224,9 +2217,6 @@
                   <div class="ai-intel-sublabel">Tenant · Location · Lease · Supply · Pricing · Debt · Thesis</div>
                 </div>
               </div>
-              <button type="button" class="btn btn-primary ai-intel-run-btn" id="aiIntelRunBtn">
-                Run Analysis
-              </button>
             </div>
             <div class="ai-intel-panel" id="aiIntelPanel" hidden>
               <div class="ai-intel-panel-header">
@@ -4006,7 +3996,7 @@
       loopnetParseStatus.className = 'loopnet-parse-status';
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 9000);
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
 
       try {
         const res = await fetch('/api/parse-listing', {
@@ -4076,20 +4066,14 @@
 
     // ── AI MARKET INTELLIGENCE ──────────────────────────────────
     (function () {
-      const runBtn     = document.getElementById('aiIntelRunBtn');
       const panel      = document.getElementById('aiIntelPanel');
       const body       = document.getElementById('aiIntelBody');
       const closeBtn   = document.getElementById('aiIntelCloseBtn');
-      const triggerBar = document.getElementById('aiIntelTriggerBar');
 
       aiIntelGetDealContext = getDealContext;
       aiIntelRenderResult = renderResult;
       aiIntelPanelEl = panel;
 
-      triggerBar.addEventListener('click', (e) => {
-        if (!runBtn.contains(e.target)) runAnalysis();
-      });
-      runBtn.addEventListener('click', (e) => { e.stopPropagation(); runAnalysis(); });
       closeBtn.addEventListener('click', () => { panel.hidden = true; });
 
       function getDealContext() {
@@ -4115,39 +4099,10 @@
         };
       }
 
-      async function runAnalysis() {
+      function runAnalysis() {
         if (intelData.loaded && intelData.intel) {
           renderResult(intelData.intel, getDealContext());
           panel.hidden = false;
-          return;
-        }
-
-        const ctx = getDealContext();
-        panel.hidden = false;
-        body.innerHTML = `
-          <div class="ai-intel-loading">
-            <div class="ai-intel-spinner"></div>
-            <span>Analyzing ${ctx.assetType} market in ${ctx.submarket}…</span>
-          </div>`;
-        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-        try {
-          const res = await fetch('/api/market-intel', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(ctx)
-          });
-          if (!res.ok) {
-            const e = await res.json().catch(() => ({}));
-            throw new Error(e.error || `API error ${res.status}`);
-          }
-          const data = await res.json();
-          renderResult(data, ctx);
-        } catch (err) {
-          body.innerHTML = `
-            <div class="ai-intel-error">
-              <strong>Analysis unavailable.</strong> ${err.message}
-            </div>`;
         }
       }
 
