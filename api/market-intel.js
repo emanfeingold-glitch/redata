@@ -63,6 +63,7 @@ export default async function handler(req, res) {
       walt,
       irr,
       dscr,
+      rawScore,
     } = body;
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -71,7 +72,7 @@ export default async function handler(req, res) {
       throw new Error("ANTHROPIC_API_KEY is not configured");
     }
 
-    const prompt = `You are a senior commercial real estate research analyst. Provide market intelligence for the following deal.
+        const prompt = `You are a senior commercial real estate research analyst. Analyze the following deal and return market intelligence across six structured modules.
 
 DEAL INPUTS:
 - Asset type: ${assetType}
@@ -86,24 +87,80 @@ DEAL INPUTS:
 - Holding period: ${holdPeriod} years
 - Model IRR: ${irr}
 - Model DSCR: ${dscr}
+- Current deal score: ${rawScore}/100
+
+Score adjustment guidance:
+- Return scoreAdjustment.delta as an integer between -15 and +15.
+- Positive delta: market conditions meaningfully support the score (strong submarket, compressing cap rates, IG tenant, tight supply).
+- Negative delta: market conditions undercut the score (aggressive pricing, expanding cap rates, oversupplied, high rollover risk).
+- Zero: market context is broadly consistent with what the numbers already reflect.
+- Keep scoreAdjustment.rationale to one concise sentence.
 
 Respond ONLY with a valid JSON object — no markdown, no preamble, no explanation outside the JSON.
-{
-  \"capRateRange\": \"e.g. 5.5%–6.5%\",
-  \"capRateTrend\": \"compressing | stable | expanding\",
-  \"capRateTrendNote\": \"one sentence\",
-  \"supplyDemandSignal\": \"strong demand | balanced | oversupplied\",
-  \"supplyDemandNote\": \"one sentence\",
-  \"rentGrowthOutlook\": \"e.g. +3–4% annually\",
-  \"rentGrowthNote\": \"one sentence\",
-  \"flags\": [
-    { \"sentiment\": \"bullish | neutral | bearish\", \"text\": \"concise flag\" },
-    { \"sentiment\": \"bullish | neutral | bearish\", \"text\": \"concise flag\" },
-    { \"sentiment\": \"bullish | neutral | bearish\", \"text\": \"concise flag\" }
-  ],
-  \"thesis\": \"2–3 sentence investment thesis specific to this deal.\"
-}`;
 
+{
+  "scoreAdjustment": {
+    "delta": 0,
+    "rationale": "one sentence"
+  },
+  "tenantIntel": {
+    "summary": "2–3 sentence credit + sector profile, or null if no named tenants",
+    "creditRating": "e.g. BBB- (S&P) or Not rated — regional",
+    "creditTier": "Investment Grade | Sub-IG | Unrated",
+    "sectorSignal": "e.g. Discount retail: counter-cyclical demand",
+    "concentrationRisk": "single-tenant vs multi-tenant risk statement",
+    "capRateImplication": "how tenant credit affects cap rate vs generic asset type"
+  },
+  "locationIntel": {
+    "summary": "2–3 sentence submarket quality assessment",
+    "infillSignal": "Infill | Suburban | Exurban + 1-sentence rationale",
+    "logisticsAccess": "port, airport, highway access for Industrial/Retail or null",
+    "climateRiskFlag": "flood zone, hurricane, wildfire risk or null if low-risk",
+    "neighborhoodTrend": "Gentrifying | Stable | Declining + rationale",
+    "laborMarket": "warehouse/logistics wage trends for Industrial or null"
+  },
+  "leaseRiskIntel": {
+    "summary": "2–3 sentence interpretation of WALT + lease type + occupancy as combined risk",
+    "rolloverExposure": "Low | Moderate | High + 1 sentence",
+    "markToMarketAngle": "is short WALT an opportunity or a risk?",
+    "retenantingCost": "estimated TI, LC, and downtime assumptions if rollover occurs",
+    "absorptionOutlook": "can this submarket absorb re-leasing at flat or higher rents?"
+  },
+  "supplyIntel": {
+    "summary": "2–3 sentence pipeline + absorption synthesis",
+    "supplySignal": "Tight | Balanced | Oversupplied",
+    "constructionTrend": "Is spec construction rising, falling, or halted?",
+    "absorptionTrend": "Is the market absorbing new supply or seeing rising vacancy?",
+    "rentGrowthOutlook": "e.g. +2–4% / yr or Flat to negative",
+    "rentGrowthNote": "1-sentence explanation",
+    "demandDrivers": "key demand tailwinds or headwinds for this asset type + MSA"
+  },
+  "pricingIntel": {
+    "summary": "2–3 sentence verdict on whether pricing is cheap, fair, or expensive",
+    "pricingVerdict": "Cheap | Fair | Aggressive | Distressed",
+    "replacementCost": "is asking price above or below estimated replacement cost?",
+    "sellerMotivation": "any signals of seller motivation, loan maturity, 1031 pressure or null",
+    "capRateRange": "market cap rate range e.g. 5.5% – 6.5%",
+    "capRateTrend": "compressing | stable | expanding",
+    "capRateTrendNote": "1-sentence explanation"
+  },
+  "debtIntel": {
+    "summary": "2–3 sentence financing environment assessment",
+    "agencyEligible": true or false — true only for multifamily,
+    "recommendedLender": "CMBS | Life Company | Bank/Credit Union | Agency | Debt Fund",
+    "lenderRationale": "1-sentence explanation of why that lender type",
+    "ioLikelihood": "Common | Possible | Unlikely",
+    "prepaymentRisk": "Defeasance | Yield Maintenance | Step-down | Open",
+    "rateLockNote": "rate lock timing risk given current rate environment"
+  },
+  "flags": [
+    { "sentiment": "bullish | neutral | bearish", "text": "concise actionable flag" },
+    { "sentiment": "bullish | neutral | bearish", "text": "concise actionable flag" },
+    { "sentiment": "bullish | neutral | bearish", "text": "concise actionable flag" }
+  ],
+  "brokerRemarkFlag": "motivated seller signal or unusual terms if present, else null",
+  "thesis": "3–4 sentence investment thesis synthesizing asset type, submarket, tenant credit, lease structure, supply/demand, and pricing."
+}`;
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -113,7 +170,7 @@ Respond ONLY with a valid JSON object — no markdown, no preamble, no explanati
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 1000,
+        max_tokens: 6000,
         messages: [
           {
             role: "user",

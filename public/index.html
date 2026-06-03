@@ -1269,6 +1269,14 @@
       color: var(--muted);
     }
 
+    .ai-score-delta {
+      margin: 6px 0 0;
+      font-size: 0.82rem;
+      color: var(--brand-dark);
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
     .score-breakdown {
       display: none;
       margin-top: 20px;
@@ -2189,8 +2197,7 @@
                 <span>Annual Taxes</span>
                 <strong id="annualTaxesOutput">—</strong>
                 <small class="metric-note" id="taxesInNoiNote"></small>
-              </div>
-            </div>
+              </div></div>
           </div>
 
           <div class="basic-calc-input-row">
@@ -2236,6 +2243,9 @@
                   <div class="ai-intel-sublabel">Tenant · Location · Lease · Supply · Pricing · Debt · Thesis</div>
                 </div>
               </div>
+              <button type="button" class="btn btn-primary ai-intel-run-btn" id="aiIntelRunBtn">
+                ✦ Get Market Intelligence
+              </button>
             </div>
             <div class="ai-intel-panel" id="aiIntelPanel" hidden>
               <div class="ai-intel-panel-header">
@@ -2254,6 +2264,7 @@
             <span>Deal Score</span>
             <strong id="dealScoreOutput">—</strong>
             <p id="dealVerdictOutput">Enter assumptions to score the deal</p>
+            <p id="aiScoreDelta" class="ai-score-delta" hidden></p>
             <div class="score-breakdown" id="scoreBreakdown"></div>
           </div>
 
@@ -2407,8 +2418,17 @@
     const intelData = {
       loaded: false,
       fields: null,
-      intel: null
+      intel: null,
+      scoreAdjustment: null
     };
+
+    function clearAiScoreAdjustmentUI() {
+      intelData.loaded = false;
+      intelData.intel = null;
+      intelData.scoreAdjustment = null;
+      const deltaEl = document.getElementById('aiScoreDelta');
+      if (deltaEl) deltaEl.hidden = true;
+    }
 
     let aiIntelGetDealContext = null;
     let aiIntelRenderResult = null;
@@ -2520,6 +2540,23 @@
     const dealScoreOutput = document.querySelector("#dealScoreOutput");
     const dealVerdictOutput = document.querySelector("#dealVerdictOutput");
     const scoreBreakdown = document.querySelector("#scoreBreakdown");
+
+    function applyScoreAdjustment(adjustment) {
+      const deltaEl = document.getElementById('aiScoreDelta');
+      if (!adjustment || adjustment.delta === 0) {
+        if (deltaEl) deltaEl.hidden = true;
+        return;
+      }
+      const rawScore = parseInt(dealScoreOutput.textContent, 10);
+      if (isNaN(rawScore)) return;
+      const adjusted = Math.max(0, Math.min(100, rawScore + adjustment.delta));
+      dealScoreOutput.textContent = adjusted;
+      if (deltaEl) {
+        const sign = adjustment.delta > 0 ? '+' : '';
+        deltaEl.textContent = `AI Signal: ${sign}${adjustment.delta} · ${adjustment.rationale}`;
+        deltaEl.hidden = false;
+      }
+    }
 
     function formatWithCommas(value) {
       const num = parseInt(value.toString().replace(/,/g, ""), 10);
@@ -3302,8 +3339,14 @@
       document.getElementById('walt'),
       document.getElementById('numTenants')
     ].forEach((input) => {
-      input.addEventListener("input", () => updateDealPreview());
-      input.addEventListener("change", () => updateDealPreview());
+      input.addEventListener("input", () => {
+        clearAiScoreAdjustmentUI();
+        updateDealPreview();
+      });
+      input.addEventListener("change", () => {
+        clearAiScoreAdjustmentUI();
+        updateDealPreview();
+      });
     });
 
     // Advanced panel toggle
@@ -3326,6 +3369,7 @@
 
     document.getElementById('numTenants').addEventListener('input', () => {
       numTenantsUserEdited = true;
+      clearAiScoreAdjustmentUI();
       updateDealPreview();
     });
 
@@ -3337,6 +3381,7 @@
       else if (yr >= 2000) capexReserveInput.value = '0.85';
       else if (yr >= 1980) capexReserveInput.value = '1.50';
       else capexReserveInput.value = '2.25';
+      clearAiScoreAdjustmentUI();
       updateDealPreview();
     });
 
@@ -3997,6 +4042,7 @@
         }
       }
 
+      clearAiScoreAdjustmentUI();
       updateDealPreview();
     }
 
@@ -4032,7 +4078,7 @@
         }
 
         const data = await res.json();
-        if (!data || !data.fields || !data.intel) {
+        if (!data || !data.fields) {
           throw new Error('Invalid parser response');
         }
 
@@ -4041,12 +4087,9 @@
 
         applyLoopNetResult(data.fields, filledKeys);
 
-        intelData.fields = data.fields;
-        intelData.intel = data.intel;
-        intelData.loaded = true;
-
-        aiIntelRenderResult?.(data.intel, aiIntelGetDealContext ? aiIntelGetDealContext() : {});
-        if (aiIntelPanelEl) aiIntelPanelEl.hidden = false;
+        intelData.loaded = false;
+        intelData.intel = null;
+        intelData.scoreAdjustment = null;
 
         const stated = filledKeys.length;
         const inferredEntries = Object.entries(data.fields.confidence || {})
@@ -4054,8 +4097,7 @@
         const inferredCount = inferredEntries.length;
         const inferredNames = inferredEntries.map(([k]) => k).join(', ');
         loopnetParseStatus.textContent = `Filled ${stated} fields`
-          + (inferredCount > 0 ? ` · ${inferredCount} inferred (${inferredNames})` : '')
-          + ' · Market intelligence ready ↓';
+          + (inferredCount > 0 ? ` · ${inferredCount} inferred (${inferredNames})` : '');
         loopnetParseStatus.className = 'loopnet-parse-status success';
       } catch (err) {
         const fallback = parseLoopNetText(text);
@@ -4094,6 +4136,7 @@
       const panel      = document.getElementById('aiIntelPanel');
       const body       = document.getElementById('aiIntelBody');
       const closeBtn   = document.getElementById('aiIntelCloseBtn');
+      const runBtn     = document.getElementById('aiIntelRunBtn');
 
       aiIntelGetDealContext = getDealContext;
       aiIntelRenderResult = renderResult;
@@ -4126,14 +4169,68 @@
 
       function runAnalysis() {
         if (intelData.loaded && intelData.intel) {
-          renderResult(intelData.intel, getDealContext());
+          renderResult(intelData.intel, getDealContext(), intelData.scoreAdjustment);
           panel.hidden = false;
         }
       }
 
+      async function fetchMarketIntel() {
+        if (!runBtn) return;
+
+        const context = getDealContext();
+        const rawScore = dealScoreOutput.textContent.trim();
+
+        intelData.loaded = false;
+        intelData.intel = null;
+        intelData.scoreAdjustment = null;
+
+        runBtn.disabled = true;
+        runBtn.textContent = '✦ Analyzing…';
+        panel.hidden = false;
+        body.innerHTML = '<div class="ai-intel-loading"><div class="ai-intel-spinner"></div>Analyzing market intelligence…</div>';
+
+        try {
+          const res = await fetch('/api/market-intel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...context, rawScore })
+          });
+
+          if (!res.ok) {
+            const e = await res.json().catch(() => ({}));
+            throw new Error(e.error || `API error ${res.status}`);
+          }
+
+          const data = await res.json();
+          if (!data) {
+            throw new Error('Invalid market intelligence response');
+          }
+
+          intelData.intel = data;
+          intelData.scoreAdjustment = data.scoreAdjustment || null;
+          intelData.loaded = true;
+
+          renderResult(data, context, data.scoreAdjustment);
+          panel.hidden = false;
+          applyScoreAdjustment(data.scoreAdjustment);
+        } catch (err) {
+          const errMsg = err?.message || err?.name || (err ? String(err) : 'unknown error');
+          body.textContent = `Market intelligence failed: ${errMsg}`;
+          panel.hidden = false;
+        } finally {
+          runBtn.disabled = false;
+          runBtn.textContent = '✦ Get Market Intelligence';
+        }
+      }
+
+      runBtn?.addEventListener('click', fetchMarketIntel);
+
       function icon(s) { return s === 'bullish' ? '↑' : s === 'bearish' ? '↓' : '→'; }
 
-      function renderResult(r, ctx) {
+      function renderResult(r, ctx, adjustment) {
+        const scoreAdjustmentHtml = adjustment && adjustment.delta !== 0
+          ? `<div class="ai-intel-score-adjustment">AI Score Adjustment: ${adjustment.delta > 0 ? '+' : ''}${adjustment.delta} · ${adjustment.rationale || ''}</div>`
+          : '';
         const hasModuleIntel = [
           'tenantIntel',
           'locationIntel',
@@ -4242,15 +4339,14 @@
               ${r.thesis || ''}
             </div>
             <div class="ai-intel-footer">
-              <span class="ai-intel-disclaimer">AI-generated · ${ctx.assetType} · ${ctx.submarket} · Research only</span>
+              <div>
+                <span class="ai-intel-disclaimer">AI-generated · ${ctx.assetType} · ${ctx.submarket} · Research only</span>
+                ${scoreAdjustmentHtml}
+              </div>
               <button type="button" class="btn btn-secondary ai-intel-refresh-btn" id="aiIntelRefreshBtn">↺ Refresh</button>
             </div>`;
 
-          document.getElementById('aiIntelRefreshBtn')?.addEventListener('click', () => {
-            intelData.loaded = false;
-            intelData.intel = null;
-            runAnalysis();
-          });
+          document.getElementById('aiIntelRefreshBtn')?.addEventListener('click', fetchMarketIntel);
           return;
         }
         const trendArrow = r.capRateTrend === 'compressing' ? '↓' : r.capRateTrend === 'expanding' ? '↑' : '→';
@@ -4285,15 +4381,14 @@
             ${r.thesis || ''}
           </div>
           <div class="ai-intel-footer">
-            <span class="ai-intel-disclaimer">AI-generated · ${ctx.assetType} · ${ctx.submarket} · Research only</span>
+            <div>
+              <span class="ai-intel-disclaimer">AI-generated · ${ctx.assetType} · ${ctx.submarket} · Research only</span>
+              ${scoreAdjustmentHtml}
+            </div>
             <button type="button" class="btn btn-secondary ai-intel-refresh-btn" id="aiIntelRefreshBtn">↺ Refresh</button>
           </div>`;
 
-        document.getElementById('aiIntelRefreshBtn')?.addEventListener('click', () => {
-          intelData.loaded = false;
-          intelData.intel = null;
-          runAnalysis();
-        });
+        document.getElementById('aiIntelRefreshBtn')?.addEventListener('click', fetchMarketIntel);
       }
     })();
 
