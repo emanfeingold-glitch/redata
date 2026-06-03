@@ -2221,7 +2221,7 @@
                 <div class="ai-intel-icon">✦</div>
                 <div>
                   <div class="ai-intel-label">AI Market Intelligence</div>
-                  <div class="ai-intel-sublabel">Cap rates · Supply/demand · Risk flags · Thesis</div>
+                  <div class="ai-intel-sublabel">Tenant · Location · Lease · Supply · Pricing · Debt · Thesis</div>
                 </div>
               </div>
               <button type="button" class="btn btn-primary ai-intel-run-btn" id="aiIntelRunBtn">
@@ -2394,6 +2394,16 @@
       avmLow: null,
       annualTaxes: null
     };
+
+    const intelData = {
+      loaded: false,
+      fields: null,
+      intel: null
+    };
+
+    let aiIntelGetDealContext = null;
+    let aiIntelRenderResult = null;
+    let aiIntelPanelEl = null;
 
     async function initFredRates() {
       try {
@@ -3931,10 +3941,58 @@
         }
       }
 
+      // ── New fields from AI parser ──────────────────────────────────────
+      if (result.walt != null) setField('walt', result.walt);
+      if (result.numTenants != null) setField('numTenants', result.numTenants);
+      if (result.leaseExpiryPct != null) setField('leaseExpiryPct', result.leaseExpiryPct);
+
+      if (result.noiBasis) {
+        const noiBasisEl = document.getElementById('noiBasis');
+        if (noiBasisEl) {
+          noiBasisEl.value = result.noiBasis;
+          noiBasisEl.dispatchEvent(new Event('input',  { bubbles: true }));
+          noiBasisEl.dispatchEvent(new Event('change', { bubbles: true }));
+          noiBasisEl.classList.remove('loopnet-field-highlight');
+          void noiBasisEl.offsetWidth;
+          noiBasisEl.classList.add('loopnet-field-highlight');
+          setTimeout(() => noiBasisEl.classList.remove('loopnet-field-highlight'), 1400);
+        }
+      }
+
+      if (result.tenantCredit) {
+        const tenantCreditEl = document.getElementById('tenantCredit');
+        if (tenantCreditEl) {
+          const tcOption = Array.from(tenantCreditEl.options)
+            .find(o => o.value === result.tenantCredit);
+          if (tcOption) {
+            tenantCreditEl.value = result.tenantCredit;
+            tenantCreditEl.dispatchEvent(new Event('input',  { bubbles: true }));
+            tenantCreditEl.dispatchEvent(new Event('change', { bubbles: true }));
+            tenantCreditEl.classList.remove('loopnet-field-highlight');
+            void tenantCreditEl.offsetWidth;
+            tenantCreditEl.classList.add('loopnet-field-highlight');
+            setTimeout(() => tenantCreditEl.classList.remove('loopnet-field-highlight'), 1400);
+          }
+        }
+      }
+
+      // Auto-open the advanced panel if any advanced field was populated
+      const newAdvancedFields = ['walt', 'numTenants', 'leaseExpiryPct', 'noiBasis', 'tenantCredit'];
+      const anyAdvancedFilled = newAdvancedFields.some(k => result[k] != null);
+      if (anyAdvancedFilled) {
+        const advancedPanelEl  = document.getElementById('advancedPanel');
+        const advancedToggleEl = document.getElementById('advancedToggleBtn');
+        if (advancedPanelEl && advancedPanelEl.hidden) {
+          advancedPanelEl.hidden = false;
+          if (advancedToggleEl) advancedToggleEl.setAttribute('aria-expanded', 'true');
+        }
+      }
+
       updateDealPreview();
     }
 
-    document.getElementById('loopnetParseBtn').addEventListener('click', () => {
+    document.getElementById('loopnetParseBtn').addEventListener('click', async () => {
+      const parseBtn = document.getElementById('loopnetParseBtn');
       const text = loopnetPasteArea.value.trim();
 
       if (!text) {
@@ -3943,22 +4001,67 @@
         return;
       }
 
-      const { result, filled, skipped } = parseLoopNetText(text);
+      parseBtn.disabled = true;
+      loopnetParseStatus.textContent = 'Analyzing listing with AI… (~5 seconds)';
+      loopnetParseStatus.className = 'loopnet-parse-status';
 
-      if (filled.length === 0) {
-        loopnetParseStatus.textContent = "Couldn't extract any fields. Make sure you copied the full LoopNet page (Ctrl+A - Ctrl+C).";
-        loopnetParseStatus.className = 'loopnet-parse-status error';
-        return;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 9000);
+
+      try {
+        const res = await fetch('/api/parse-listing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rawText: text }),
+          signal: controller.signal
+        });
+
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({}));
+          throw new Error(e.error || `API error ${res.status}`);
+        }
+
+        const data = await res.json();
+        if (!data || !data.fields || !data.intel) {
+          throw new Error('Invalid parser response');
+        }
+
+        const filledKeys = Object.keys(data.fields)
+          .filter(k => k !== 'confidence' && data.fields[k] !== null);
+
+        applyLoopNetResult(data.fields, filledKeys);
+
+        intelData.fields = data.fields;
+        intelData.intel = data.intel;
+        intelData.loaded = true;
+
+        aiIntelRenderResult?.(data.intel, aiIntelGetDealContext ? aiIntelGetDealContext() : {});
+        if (aiIntelPanelEl) aiIntelPanelEl.hidden = false;
+
+        const stated = filledKeys.length;
+        const inferredEntries = Object.entries(data.fields.confidence || {})
+          .filter(([, v]) => v === 'inferred');
+        const inferredCount = inferredEntries.length;
+        const inferredNames = inferredEntries.map(([k]) => k).join(', ');
+        loopnetParseStatus.textContent = `Filled ${stated} fields`
+          + (inferredCount > 0 ? ` · ${inferredCount} inferred (${inferredNames})` : '')
+          + ' · Market intelligence ready ↓';
+        loopnetParseStatus.className = 'loopnet-parse-status success';
+      } catch (err) {
+        const fallback = parseLoopNetText(text);
+        applyLoopNetResult(fallback.result, fallback.filled);
+
+        intelData.loaded = false;
+        intelData.fields = null;
+        intelData.intel = null;
+
+        loopnetParseStatus.textContent = 'AI parse unavailable — used standard parser';
+        loopnetParseStatus.className = 'loopnet-parse-status';
+      } finally {
+        clearTimeout(timeoutId);
+        parseBtn.disabled = false;
+        setTimeout(() => closeLoopnetModal(), 2200);
       }
-
-      applyLoopNetResult(result, filled);
-
-      const filledMsg = filled.length ? `Filled: ${filled.join(', ')}.` : '';
-      const skippedMsg = skipped.length ? ` Not found: ${skipped.join(', ')}.` : '';
-      loopnetParseStatus.textContent = filledMsg + skippedMsg;
-      loopnetParseStatus.className = 'loopnet-parse-status success';
-
-      setTimeout(() => closeLoopnetModal(), 2200);
     });
 
     loopnetPasteArea.addEventListener('paste', () => {
@@ -3978,6 +4081,10 @@
       const body       = document.getElementById('aiIntelBody');
       const closeBtn   = document.getElementById('aiIntelCloseBtn');
       const triggerBar = document.getElementById('aiIntelTriggerBar');
+
+      aiIntelGetDealContext = getDealContext;
+      aiIntelRenderResult = renderResult;
+      aiIntelPanelEl = panel;
 
       triggerBar.addEventListener('click', (e) => {
         if (!runBtn.contains(e.target)) runAnalysis();
@@ -4009,6 +4116,12 @@
       }
 
       async function runAnalysis() {
+        if (intelData.loaded && intelData.intel) {
+          renderResult(intelData.intel, getDealContext());
+          panel.hidden = false;
+          return;
+        }
+
         const ctx = getDealContext();
         panel.hidden = false;
         body.innerHTML = `
@@ -4041,6 +4154,125 @@
       function icon(s) { return s === 'bullish' ? '↑' : s === 'bearish' ? '↓' : '→'; }
 
       function renderResult(r, ctx) {
+        const hasModuleIntel = [
+          'tenantIntel',
+          'locationIntel',
+          'leaseRiskIntel',
+          'supplyIntel',
+          'pricingIntel',
+          'debtIntel'
+        ].some(key => Object.prototype.hasOwnProperty.call(r || {}, key));
+
+        if (hasModuleIntel) {
+          const autoFlags = [];
+          if (r.locationIntel?.climateRiskFlag) {
+            autoFlags.push({ sentiment: 'bearish', text: r.locationIntel.climateRiskFlag });
+          }
+          if (r.pricingIntel?.sellerMotivation) {
+            autoFlags.push({ sentiment: 'neutral', text: 'Seller signal: ' + r.pricingIntel.sellerMotivation });
+          }
+
+          const combinedFlags = [
+            ...(r.brokerRemarkFlag ? [{ sentiment: 'bearish', text: r.brokerRemarkFlag }] : []),
+            ...autoFlags,
+            ...(r.flags || [])
+          ];
+
+          const flagsHtml = combinedFlags.map(f =>
+            `<div class="ai-intel-flag ${f.sentiment}">
+              <span class="ai-intel-flag-icon">${icon(f.sentiment)}</span>
+              <span>${f.text}</span>
+             </div>`
+          ).join('');
+
+          const modules = [];
+          if (r.tenantIntel) {
+            modules.push(`
+              <div class="ai-intel-metric">
+                <span class="ai-intel-metric-label">Tenant Intelligence</span>
+                <span class="ai-intel-metric-value">${r.tenantIntel.creditTier || '—'}</span>
+                <span class="ai-intel-metric-note">${r.tenantIntel.creditRating || '—'} · ${r.tenantIntel.sectorSignal || ''}</span>
+                <span class="ai-intel-metric-note">${r.tenantIntel.summary || ''}</span>
+                <span class="ai-intel-metric-note">${r.tenantIntel.concentrationRisk || ''}</span>
+                <span class="ai-intel-metric-note">${r.tenantIntel.capRateImplication || ''}</span>
+              </div>`);
+          }
+          if (r.locationIntel) {
+            modules.push(`
+              <div class="ai-intel-metric">
+                <span class="ai-intel-metric-label">Location &amp; Submarket</span>
+                <span class="ai-intel-metric-value">${r.locationIntel.infillSignal || '—'}</span>
+                <span class="ai-intel-metric-note">${r.locationIntel.summary || ''}</span>
+                <span class="ai-intel-metric-note">${r.locationIntel.logisticsAccess || ''}</span>
+                <span class="ai-intel-metric-note">${r.locationIntel.neighborhoodTrend || ''}</span>
+              </div>`);
+          }
+          if (r.leaseRiskIntel) {
+            modules.push(`
+              <div class="ai-intel-metric">
+                <span class="ai-intel-metric-label">Lease Risk</span>
+                <span class="ai-intel-metric-value">${r.leaseRiskIntel.rolloverExposure || '—'} Rollover Risk</span>
+                <span class="ai-intel-metric-note">${r.leaseRiskIntel.summary || ''}</span>
+                <span class="ai-intel-metric-note">${r.leaseRiskIntel.markToMarketAngle || ''}</span>
+                <span class="ai-intel-metric-note">${r.leaseRiskIntel.retenantingCost || ''}</span>
+              </div>`);
+          }
+          if (r.supplyIntel) {
+            modules.push(`
+              <div class="ai-intel-metric">
+                <span class="ai-intel-metric-label">Supply Pipeline</span>
+                <span class="ai-intel-metric-value">${r.supplyIntel.supplySignal || '—'}</span>
+                <span class="ai-intel-metric-note">${r.supplyIntel.rentGrowthOutlook || '—'} · ${r.supplyIntel.rentGrowthNote || ''}</span>
+                <span class="ai-intel-metric-note">${r.supplyIntel.summary || ''}</span>
+                <span class="ai-intel-metric-note">${r.supplyIntel.demandDrivers || ''}</span>
+              </div>`);
+          }
+          if (r.pricingIntel) {
+            const trendArrow = r.pricingIntel.capRateTrend === 'compressing' ? '↓' : r.pricingIntel.capRateTrend === 'expanding' ? '↑' : '→';
+            modules.push(`
+              <div class="ai-intel-metric">
+                <span class="ai-intel-metric-label">Pricing</span>
+                <span class="ai-intel-metric-value">${r.pricingIntel.pricingVerdict || '—'} · ${r.pricingIntel.capRateRange || '—'}</span>
+                <span class="ai-intel-metric-note">${trendArrow} ${r.pricingIntel.capRateTrend || '—'} · ${r.pricingIntel.capRateTrendNote || ''}</span>
+                <span class="ai-intel-metric-note">${r.pricingIntel.summary || ''}</span>
+                <span class="ai-intel-metric-note">${r.pricingIntel.replacementCost || ''}</span>
+              </div>`);
+          }
+          if (r.debtIntel) {
+            const agencyLabel = r.debtIntel.agencyEligible === true ? 'Agency eligible'
+              : r.debtIntel.agencyEligible === false ? 'Non-agency'
+                : '—';
+            modules.push(`
+              <div class="ai-intel-metric">
+                <span class="ai-intel-metric-label">Debt Market Fit</span>
+                <span class="ai-intel-metric-value">${r.debtIntel.recommendedLender || '—'} · ${agencyLabel}</span>
+                <span class="ai-intel-metric-note">${r.debtIntel.lenderRationale || ''}</span>
+                <span class="ai-intel-metric-note">Prepayment: ${r.debtIntel.prepaymentRisk || '—'} · I/O: ${r.debtIntel.ioLikelihood || '—'}</span>
+                <span class="ai-intel-metric-note">${r.debtIntel.rateLockNote || ''}</span>
+              </div>`);
+          }
+
+          const modulesHtml = modules.length ? `<div class="ai-intel-grid">${modules.join('')}</div>` : '';
+
+          body.innerHTML = `
+            ${modulesHtml}
+            <div class="ai-intel-flags">${flagsHtml}</div>
+            <div class="ai-intel-thesis">
+              <span class="ai-intel-thesis-label">Investment Thesis</span>
+              ${r.thesis || ''}
+            </div>
+            <div class="ai-intel-footer">
+              <span class="ai-intel-disclaimer">AI-generated · ${ctx.assetType} · ${ctx.submarket} · Research only</span>
+              <button type="button" class="btn btn-secondary ai-intel-refresh-btn" id="aiIntelRefreshBtn">↺ Refresh</button>
+            </div>`;
+
+          document.getElementById('aiIntelRefreshBtn')?.addEventListener('click', () => {
+            intelData.loaded = false;
+            intelData.intel = null;
+            runAnalysis();
+          });
+          return;
+        }
         const trendArrow = r.capRateTrend === 'compressing' ? '↓' : r.capRateTrend === 'expanding' ? '↑' : '→';
         const flagsHtml = (r.flags || []).map(f =>
           `<div class="ai-intel-flag ${f.sentiment}">
@@ -4077,7 +4309,11 @@
             <button type="button" class="btn btn-secondary ai-intel-refresh-btn" id="aiIntelRefreshBtn">↺ Refresh</button>
           </div>`;
 
-        document.getElementById('aiIntelRefreshBtn')?.addEventListener('click', runAnalysis);
+        document.getElementById('aiIntelRefreshBtn')?.addEventListener('click', () => {
+          intelData.loaded = false;
+          intelData.intel = null;
+          runAnalysis();
+        });
       }
     })();
 
