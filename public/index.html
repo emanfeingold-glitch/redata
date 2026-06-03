@@ -4063,7 +4063,11 @@
         intelData.fields = null;
         intelData.intel = null;
 
-        loopnetParseStatus.textContent = 'AI parse unavailable — ' + (err?.message || 'unknown error');
+        const errMsg = err?.message || err?.name || (err ? String(err) : 'unknown error');
+        const timedOut = err?.name === 'AbortError';
+        loopnetParseStatus.textContent = timedOut
+          ? 'AI parse unavailable — request timed out'
+          : 'AI parse unavailable — ' + errMsg;
         loopnetParseStatus.className = 'loopnet-parse-status error';
       } finally {
         loopnetParseStatus.classList.remove('loading');
