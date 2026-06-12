@@ -2373,6 +2373,9 @@
     revealEls.forEach(el => revealObserver.observe(el));
   </script>
 
+  <!-- User system (auth + per-property quota metering). Must load before the app script below. -->
+  <script src="user-system.js"></script>
+
   <script>
     // TODO: Replace with your Google OAuth 2.0 client ID from console.cloud.google.com
     const GOOGLE_CLIENT_ID = "";
@@ -2485,6 +2488,14 @@
 
       if (!address1 || !address2) {
         statusEl.textContent = "Please enter both street address and city/state/zip.";
+        statusEl.style.color = "var(--muted)";
+        return;
+      }
+
+      // Per-property quota: consumes one credit for a new property (free if this
+      // property already spent one). Blocks + prompts to upgrade when out.
+      if (!(await window.RedataUser.requireCredit()).allowed) {
+        statusEl.textContent = "Score limit reached — see the prompt to continue.";
         statusEl.style.color = "var(--muted)";
         return;
       }
@@ -3803,6 +3814,9 @@
       const compsStatusBar = document.getElementById('compsStatusBar');
       if (compsStatusBar) compsStatusBar.textContent = '';
 
+      // Reset begins a fresh property, so the next API action consumes a new credit.
+      window.RedataUser.startNewProperty();
+
       // Re-run the deal preview to refresh all outputs
       updateDealPreview();
     });
@@ -4056,6 +4070,13 @@
         return;
       }
 
+      // Per-property quota gate (shares one credit with Comps + Market Intel).
+      if (!(await window.RedataUser.requireCredit()).allowed) {
+        loopnetParseStatus.textContent = 'Score limit reached — see the prompt to continue.';
+        loopnetParseStatus.className = 'loopnet-parse-status error';
+        return;
+      }
+
       parseBtn.disabled = true;
       loopnetParseStatus.textContent = 'Analyzing listing with AI… (up to 30 seconds)';
       loopnetParseStatus.className = 'loopnet-parse-status';
@@ -4177,6 +4198,9 @@
       async function fetchMarketIntel() {
         if (!runBtn) return;
 
+        // Per-property quota gate (shares one credit with Comps + LoopNet Parse).
+        if (!(await window.RedataUser.requireCredit()).allowed) return;
+
         const context = getDealContext();
         const rawScore = dealScoreOutput.textContent.trim();
 
@@ -4224,6 +4248,13 @@
       }
 
       runBtn?.addEventListener('click', fetchMarketIntel);
+
+      // The Refresh button fires an EXTRA AI call, so it is a Pro-only feature.
+      // (It stays within the same property, so it never costs another credit.)
+      async function handleRefreshClick() {
+        if (!(await window.RedataUser.requirePaidFeature())) return;
+        fetchMarketIntel();
+      }
 
       function icon(s) { return s === 'bullish' ? '↑' : s === 'bearish' ? '↓' : '→'; }
 
@@ -4346,7 +4377,7 @@
               <button type="button" class="btn btn-secondary ai-intel-refresh-btn" id="aiIntelRefreshBtn">↺ Refresh</button>
             </div>`;
 
-          document.getElementById('aiIntelRefreshBtn')?.addEventListener('click', fetchMarketIntel);
+          document.getElementById('aiIntelRefreshBtn')?.addEventListener('click', handleRefreshClick);
           return;
         }
         const trendArrow = r.capRateTrend === 'compressing' ? '↓' : r.capRateTrend === 'expanding' ? '↑' : '→';
@@ -4388,7 +4419,7 @@
             <button type="button" class="btn btn-secondary ai-intel-refresh-btn" id="aiIntelRefreshBtn">↺ Refresh</button>
           </div>`;
 
-        document.getElementById('aiIntelRefreshBtn')?.addEventListener('click', fetchMarketIntel);
+        document.getElementById('aiIntelRefreshBtn')?.addEventListener('click', handleRefreshClick);
       }
     })();
 
