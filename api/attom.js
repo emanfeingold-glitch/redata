@@ -1,3 +1,5 @@
+import { authorize } from "../lib/authorize.js";
+
 function formatDate(date) {
   return date.toISOString().slice(0, 10);
 }
@@ -120,11 +122,15 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const { address1, address2 } = req.query;
+  const { address1, address2, propertyId } = req.query;
 
   if (!address1 || !address2) {
     return res.status(400).json({ error: "address1 and address2 are required" });
   }
+
+  // Locked down: requires a valid score token bound to this caller + property.
+  const authz = await authorize(req, { propertyId });
+  if (!authz.ok) return res.status(authz.status).json({ error: authz.code });
 
   const apiKey = process.env.ATTOM_API_KEY;
 

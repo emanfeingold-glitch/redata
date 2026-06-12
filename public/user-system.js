@@ -47,122 +47,53 @@
 
   // ==========================================================================
   //  BACKEND SEAM
-  //  Replace `LocalBackend` with a `ServerBackend` (calling /api/...) to move
-  //  enforcement server-side. Keep the same method signatures (all async).
+  //  Enforcement now lives server-side (Vercel Postgres). This client talks to
+  //  it through ServerBackend; auth, quota, and the score token are all issued
+  //  and verified by /api/*. The old localStorage LocalBackend is in git history.
   // ==========================================================================
-  const LocalBackend = {
-    K_ACCOUNTS: "redata.accounts",
-    K_SESSION:  "redata.session",
-    K_GUESTID:  "redata.guestId",
-    K_LEDGER:   "redata.ledger.",      // + identityKey
-
-    _read(key, fallback) {
-      try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
-      catch { return fallback; }
+  // Thin fetch wrapper around the server API.
+  const ServerBackend = {
+    async api(path, opts = {}) {
+      const res = await fetch(path, {
+        credentials: "include",
+        headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+        ...opts,
+      });
+      let data = null;
+      try { data = await res.json(); } catch { /* no body */ }
+      return { res, data, ok: res.ok, statusCode: res.status };
     },
-    _write(key, val) {
-      try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* quota/full: ignore */ }
-    },
-
-    async getGuestId() {
-      let id = this._read(this.K_GUESTID, null);
-      if (!id) { id = "g_" + Math.random().toString(36).slice(2) + Date.now().toString(36); this._write(this.K_GUESTID, id); }
-      return id;
-    },
-
-    async getSession()      { return this._read(this.K_SESSION, null); },           // { email } | null
-    async setSession(email) { this._write(this.K_SESSION, email ? { email } : null); },
-
-    async getAccounts()        { return this._read(this.K_ACCOUNTS, {}); },          // { [email]: account }
-    async saveAccount(account) {
-      const all = await this.getAccounts();
-      all[account.email] = account;
-      this._write(this.K_ACCOUNTS, all);
-    },
-
-    async getLedger(identityKey)        { return this._read(this.K_LEDGER + identityKey, []); }, // [ts, ...]
-    async saveLedger(identityKey, list) { this._write(this.K_LEDGER + identityKey, list); },
   };
 
-  const Backend = LocalBackend; // <-- swap here for a server-backed implementation
-
-  // ---- Password hashing (best-effort; scaffold only) ----------------------
-  async function hashPassword(pw) {
-    try {
-      const data = new TextEncoder().encode(String(pw) + "::redata-salt");
-      const buf = await crypto.subtle.digest("SHA-256", data);
-      return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
-    } catch {
-      let h = 0; for (const c of String(pw)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-      return "f" + h.toString(16);
-    }
-  }
+  const Backend = ServerBackend;
 
   // ---- Runtime state ------------------------------------------------------
   const listeners = new Set();
+  const GUEST_FALLBACK = {
+    tier: "guest", label: "Guest", email: null, used: 0,
+    limit: TIERS.guest.limit, remaining: TIERS.guest.limit,
+    windowMs: null, resetsAt: null, paidFeatures: false, signedIn: false,
+  };
   const state = {
     currentPropertyId: null,
-    creditedPropertyId: null, // which property already spent a credit this session
+    creditedPropertyId: null,       // which property already spent a credit this session
+    scoreToken: null,               // proof-of-credit for the current property (sent to data routes)
+    status: { ...GUEST_FALLBACK },  // last-known quota status (drives the UI)
   };
 
   function notify() {
     for (const cb of listeners) { try { cb(); } catch { /* ignore */ } }
   }
 
-  // ---- Identity & quota helpers ------------------------------------------
-  async function currentAccount() {
-    const session = await Backend.getSession();
-    if (!session || !session.email) return null;
-    const accounts = await Backend.getAccounts();
-    return accounts[session.email] || null;
-  }
-
-  function tierConfigFor(account) {
-    if (!account) return TIERS.guest;
-    return TIERS[account.tier] || TIERS.free;
-  }
-
-  async function identityKey() {
-    const account = await currentAccount();
-    if (account) return "acct:" + account.email;
-    return "guest:" + (await Backend.getGuestId());
-  }
-
+  // ---- Quota status (server is the source of truth) -----------------------
+  // Returns the same shape the UI already consumes. Falls back to a guest view
+  // if the backend is unreachable (e.g. static preview without the API).
   async function getQuotaStatus() {
-    const account = await currentAccount();
-    const cfg = tierConfigFor(account);
-    const ledger = await Backend.getLedger(await identityKey());
-    const now = Date.now();
-
-    let used, resetsAt = null;
-    if (cfg.windowMs) {
-      const inWindow = ledger.filter((ts) => now - ts < cfg.windowMs);
-      used = inWindow.length;
-      if (inWindow.length) resetsAt = Math.min(...inWindow) + cfg.windowMs;
-    } else {
-      used = ledger.length; // lifetime (guest)
-    }
-    return {
-      tier: cfg.id,
-      label: cfg.label,
-      email: account ? account.email : null,
-      used,
-      limit: cfg.limit,
-      remaining: Math.max(0, cfg.limit - used),
-      windowMs: cfg.windowMs,
-      resetsAt,
-      paidFeatures: cfg.paidFeatures,
-      signedIn: !!account,
-    };
-  }
-
-  async function consumeCredit() {
-    const key = await identityKey();
-    const ledger = await Backend.getLedger(key);
-    ledger.push(Date.now());
-    await Backend.saveLedger(key, ledger);
-    state.creditedPropertyId = state.currentPropertyId;
-    notify();
+    try {
+      const { ok, data } = await Backend.api("/api/auth/me");
+      if (ok && data && data.status) { state.status = data.status; return state.status; }
+    } catch { /* offline / backend unreachable */ }
+    return state.status || { ...GUEST_FALLBACK };
   }
 
   // ==========================================================================
@@ -177,8 +108,14 @@
     openAccount() { return openAccountModal(); },
 
     getQuotaStatus,
-    async getCurrentUser() { return currentAccount(); },
-    hasPaidFeatures: async function () { return tierConfigFor(await currentAccount()).paidFeatures; },
+    async getCurrentUser() {
+      const s = await getQuotaStatus();
+      return s.signedIn ? { email: s.email, tier: s.tier } : null;
+    },
+    async hasPaidFeatures() {
+      const s = (state.status && state.status.signedIn) ? state.status : await getQuotaStatus();
+      return !!s.paidFeatures;
+    },
 
     // --- property lifecycle ---
     startNewProperty() {
@@ -189,64 +126,81 @@
       return state.currentPropertyId && state.currentPropertyId === state.creditedPropertyId;
     },
 
-    /* Gate an API-backed action. Returns { allowed }.
-       - free if the current property already spent a credit
-       - otherwise consumes one credit if quota remains
-       - otherwise shows the upgrade/sign-up modal and returns allowed:false   */
-    async requireCredit() {
-      if (this.isCurrentPropertyCredited()) return { allowed: true };
-      const status = await getQuotaStatus();
-      if (status.remaining > 0) {
-        await consumeCredit();
-        return { allowed: true };
+    /* Gate an API-backed action. Consumes one property credit server-side
+       (idempotent per property), stores the returned score token, and maps the
+       server's limits to the right modal. `action` is one of
+       'attom' | 'parse-listing' | 'market-intel'. Returns { allowed }. */
+    async requireCredit(action) {
+      try {
+        const { ok, statusCode, data } = await Backend.api("/api/credit/consume", {
+          method: "POST",
+          body: JSON.stringify({ propertyId: state.currentPropertyId, action: action || "" }),
+        });
+        if (ok && data && data.scoreToken) {
+          state.scoreToken = data.scoreToken;
+          state.creditedPropertyId = state.currentPropertyId;
+          if (data.status) state.status = data.status;
+          notify();
+          return { allowed: true };
+        }
+        const status = (data && data.status) || state.status || (await getQuotaStatus());
+        state.status = status; notify();
+        if (statusCode === 402) { openUpgradeModal(status, "paid-feature"); return { allowed: false }; }
+        if (statusCode === 429) { openUpgradeModal(status, "quota"); return { allowed: false }; }
+        // 401 / 403 / 500 / network — fail closed and surface the limit prompt.
+        openUpgradeModal(status, "quota");
+        return { allowed: false };
+      } catch {
+        return { allowed: false };
       }
-      openUpgradeModal(status, "quota");
-      return { allowed: false };
     },
 
-    /* Gate a paid-only action (Market-Intel Refresh). Returns boolean. */
+    /* Gate the paid-only Market-Intel refresh. Instant client check for UX;
+       the server re-checks on the consume call as the real backstop. */
     async requirePaidFeature() {
-      if (await this.hasPaidFeatures()) return true;
-      openUpgradeModal(await getQuotaStatus(), "paid-feature");
+      const s = await getQuotaStatus();
+      if (s.paidFeatures) return true;
+      openUpgradeModal(s, "paid-feature");
       return false;
     },
 
-    // --- auth (Promise-based; swap Backend to go server-side) ---
+    getScoreToken() { return state.scoreToken; },
+    getPropertyId() { return state.currentPropertyId; },
+
+    // --- auth (server-backed) ---
     async signUp(email, password) {
-      email = String(email || "").trim().toLowerCase();
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("Enter a valid email address.");
-      if (String(password || "").length < 6) throw new Error("Password must be at least 6 characters.");
-      const accounts = await Backend.getAccounts();
-      if (accounts[email]) throw new Error("An account with that email already exists. Try signing in.");
-      const account = { email, passwordHash: await hashPassword(password), tier: "free", createdAt: Date.now() };
-      await Backend.saveAccount(account);
-      await Backend.setSession(email);
-      notify();
-      return account;
+      const { ok, data } = await Backend.api("/api/auth/signup", {
+        method: "POST", body: JSON.stringify({ email, password }),
+      });
+      if (!ok) throw new Error((data && data.error) || "Sign up failed.");
+      await getQuotaStatus(); notify();
+      return data.user;
     },
     async signIn(email, password) {
-      email = String(email || "").trim().toLowerCase();
-      const accounts = await Backend.getAccounts();
-      const account = accounts[email];
-      if (!account || account.passwordHash !== (await hashPassword(password))) {
-        throw new Error("Incorrect email or password.");
-      }
-      await Backend.setSession(email);
-      notify();
-      return account;
+      const { ok, data } = await Backend.api("/api/auth/login", {
+        method: "POST", body: JSON.stringify({ email, password }),
+      });
+      if (!ok) throw new Error((data && data.error) || "Sign in failed.");
+      await getQuotaStatus(); notify();
+      return data.user;
     },
-    async signOut() { await Backend.setSession(null); notify(); },
+    async signOut() {
+      await Backend.api("/api/auth/logout", { method: "POST", body: "{}" });
+      state.scoreToken = null;
+      await getQuotaStatus(); notify();
+    },
 
-    /* Promote the signed-in account to the paid tier.
-       STRIPE INTEGRATION GOES HERE: today this just flips the tier locally.
-       Later, kick off Stripe Checkout and only flip on a verified webhook. */
+    /* Start a Stripe Checkout subscription. The Plans popup is the only caller.
+       Returns a status object instead of throwing for expected outcomes:
+       'needs_account' | 'not_configured' | 'redirecting' | 'error'. */
     async upgradeToPaid() {
-      const account = await currentAccount();
-      if (!account) throw new Error("Create a free account before upgrading to Pro.");
-      account.tier = "paid";
-      await Backend.saveAccount(account);
-      notify();
-      return account;
+      const { ok, statusCode, data } = await Backend.api("/api/stripe/create-checkout-session", {
+        method: "POST", body: "{}",
+      });
+      if (statusCode === 401) return { status: "needs_account" };
+      if (ok && data && data.configured === false) return { status: "not_configured" };
+      if (ok && data && data.url) { window.location.href = data.url; return { status: "redirecting" }; }
+      return { status: "error", message: (data && data.error) || "Upgrade failed." };
     },
   };
 
@@ -633,12 +587,23 @@
           cta: `<button class="rdu-btn rdu-btn-primary" id="rduPlanPro">Upgrade to Pro</button>`,
         })}
       </div>
-      <p class="rdu-foot-note">Billing isn’t connected yet — “Upgrade” activates Pro for testing. Stripe checkout drops in later.</p>`;
+      <p class="rdu-foot-note" id="rduPlansNote">REDATA Pro is ${TIERS.paid.priceDisplay}. Choose Upgrade to start secure Stripe checkout.</p>`;
+
+    const setNote = (msg, isError) => {
+      const note = els.modalBody.querySelector("#rduPlansNote");
+      if (note) { note.textContent = msg; note.style.color = isError ? "#9f342f" : ""; }
+    };
 
     els.modalBody.querySelector("#rduPlanFree")?.addEventListener("click", () => openAccountModal("signup"));
-    els.modalBody.querySelector("#rduPlanPro")?.addEventListener("click", async () => {
-      try { await RedataUser.upgradeToPaid(); closeModal(); }
-      catch { openAccountModal("signup"); }  // guest must create an account before upgrading
+    els.modalBody.querySelector("#rduPlanPro")?.addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      const out = await RedataUser.upgradeToPaid();
+      if (out.status === "needs_account") { openAccountModal("signup"); return; }   // guest → make an account first
+      if (out.status === "redirecting") return;                                       // navigating to Stripe
+      if (out.status === "not_configured") setNote("Billing isn’t connected yet — add your Stripe keys to enable checkout.", true);
+      else if (out.status === "error") setNote(out.message || "Something went wrong.", true);
+      btn.disabled = false;
     });
 
     els.overlay.hidden = false;

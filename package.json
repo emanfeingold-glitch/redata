@@ -1,0 +1,14 @@
+{
+  "name": "redata",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
+    "jose": "^5.9.6",
+    "stripe": "^17.5.0",
+    "ws": "^8.18.0"
+  }
+}

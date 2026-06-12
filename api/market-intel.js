@@ -1,3 +1,5 @@
+import { authorize } from "../lib/authorize.js";
+
 function getRequestBody(req) {
   if (typeof req.body === "string") {
     try {
@@ -49,6 +51,11 @@ export default async function handler(req, res) {
 
   try {
     const body = getRequestBody(req);
+
+    // Locked down: requires a valid score token bound to this caller + property.
+    const authz = await authorize(req, { propertyId: body.propertyId });
+    if (!authz.ok) return res.status(authz.status).json({ error: authz.code });
+
     const {
       assetType,
       submarket,

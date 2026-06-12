@@ -2494,7 +2494,7 @@
 
       // Per-property quota: consumes one credit for a new property (free if this
       // property already spent one). Blocks + prompts to upgrade when out.
-      if (!(await window.RedataUser.requireCredit()).allowed) {
+      if (!(await window.RedataUser.requireCredit('attom')).allowed) {
         statusEl.textContent = "Score limit reached — see the prompt to continue.";
         statusEl.style.color = "var(--muted)";
         return;
@@ -2504,8 +2504,11 @@
       statusEl.style.color = "var(--muted)";
 
       try {
-        const params = new URLSearchParams({ address1, address2 });
-        const res = await fetch(`/api/attom?${params}`);
+        const params = new URLSearchParams({ address1, address2, propertyId: window.RedataUser.getPropertyId() });
+        const res = await fetch(`/api/attom?${params}`, {
+          credentials: "include",
+          headers: { "X-Score-Token": window.RedataUser.getScoreToken() || "" },
+        });
         const data = await res.json();
 
         if (!res.ok) throw new Error(data.error || "Unknown error");
@@ -4071,7 +4074,7 @@
       }
 
       // Per-property quota gate (shares one credit with Comps + Market Intel).
-      if (!(await window.RedataUser.requireCredit()).allowed) {
+      if (!(await window.RedataUser.requireCredit('parse-listing')).allowed) {
         loopnetParseStatus.textContent = 'Score limit reached — see the prompt to continue.';
         loopnetParseStatus.className = 'loopnet-parse-status error';
         return;
@@ -4088,8 +4091,9 @@
       try {
         const res = await fetch('/api/parse-listing', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rawText: text }),
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', 'X-Score-Token': window.RedataUser.getScoreToken() || '' },
+          body: JSON.stringify({ rawText: text, propertyId: window.RedataUser.getPropertyId() }),
           signal: controller.signal
         });
 
@@ -4199,7 +4203,8 @@
         if (!runBtn) return;
 
         // Per-property quota gate (shares one credit with Comps + LoopNet Parse).
-        if (!(await window.RedataUser.requireCredit()).allowed) return;
+        // Also enforces paid-only refresh server-side (2nd+ market-intel on a property).
+        if (!(await window.RedataUser.requireCredit('market-intel')).allowed) return;
 
         const context = getDealContext();
         const rawScore = dealScoreOutput.textContent.trim();
@@ -4216,8 +4221,9 @@
         try {
           const res = await fetch('/api/market-intel', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...context, rawScore })
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', 'X-Score-Token': window.RedataUser.getScoreToken() || '' },
+            body: JSON.stringify({ ...context, rawScore, propertyId: window.RedataUser.getPropertyId() })
           });
 
           if (!res.ok) {
