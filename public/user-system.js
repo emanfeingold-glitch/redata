@@ -325,9 +325,10 @@
       .rdu-account-meta .em { font-weight:800; font-size:0.9rem; word-break:break-all; }
       .rdu-account-meta .mt { font-size:0.76rem; color:var(--muted); }
       .rdu-plans-btn {
-        min-height:42px; padding:0 14px; border-radius:8px; cursor:pointer;
+        display:inline-flex; align-items:center; justify-content:center;
+        min-height:42px; padding:0 18px; border-radius:8px; cursor:pointer;
         border:1px solid var(--line); background:#fff; color:var(--ink);
-        font-weight:800; font-size:0.9rem; white-space:nowrap;
+        font-weight:700; white-space:nowrap;
         transition:border-color .18s ease, color .18s ease;
       }
       .rdu-plans-btn:hover { border-color:var(--brand); color:var(--brand-dark); }
@@ -544,7 +545,7 @@
     return `
       ${compact ? "" : `<div class="rdu-pro-card"><strong>REDATA Pro</strong><span>Up to ${TIERS.paid.limit} property scores per hour and one-click Market-Intel refresh.</span></div>`}
       <div class="rdu-actions"><button class="rdu-btn rdu-btn-primary" id="rduUpgrade">Upgrade to Pro</button></div>
-      <p class="rdu-foot-note">Billing isn't connected yet — this activates Pro for testing. Stripe checkout drops in here later.</p>`;
+      <p class="rdu-foot-note">REDATA Pro is ${TIERS.paid.priceDisplay} — review and continue from the Plans page.</p>`;
   }
 
   function wireAuthForm(which) {
@@ -572,16 +573,11 @@
   }
 
   function wireProCta() {
+    // The Plans popup is the single place a subscription moves forward; every other
+    // "Upgrade" affordance just routes here.
     const btn = els.modalBody.querySelector("#rduUpgrade");
     if (!btn) return;
-    btn.addEventListener("click", async () => {
-      btn.disabled = true;
-      try { await RedataUser.upgradeToPaid(); closeModal(); }
-      catch (e) {
-        // Not signed in → route to sign-up
-        renderModal("quota", { ...(await getQuotaStatus()), tier: "guest", limit: TIERS.guest.limit });
-      }
-    });
+    btn.addEventListener("click", () => renderPlans());
   }
 
   async function openAccountModal(tab) {
