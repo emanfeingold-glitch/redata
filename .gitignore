@@ -1,7 +1,3 @@
-.env
-.env.local
+.env*
 node_modules
 .vercel
-
-.vercel
-.env*

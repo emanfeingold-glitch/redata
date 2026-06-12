@@ -2,6 +2,9 @@
   "functions": {
     "api/parse-listing.js": {
       "maxDuration": 60
+    },
+    "api/market-intel.js": {
+      "maxDuration": 60
     }
   },
   "rewrites": [
