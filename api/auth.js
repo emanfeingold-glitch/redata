@@ -1,16 +1,17 @@
-import { sql } from "../../lib/db.js";
+import { sql } from "../lib/db.js";
 import {
   hashPassword, verifyPassword, signSession,
   buildCookie, clearCookie, appendCookie,
   SESSION_COOKIE, SESSION_MAX_AGE,
-} from "../../lib/auth.js";
-import { getSessionUserId, ensureGuest } from "../../lib/subject.js";
-import { effectiveTier } from "../../lib/tiers.js";
-import { getQuotaStatus } from "../../lib/quota.js";
+} from "../lib/auth.js";
+import { getSessionUserId, ensureGuest } from "../lib/subject.js";
+import { effectiveTier } from "../lib/tiers.js";
+import { getQuotaStatus } from "../lib/quota.js";
 
-// One serverless function serving /api/auth/<action>. Consolidated from separate
-// signup/login/logout/me files to stay under Vercel Hobby's 12-function limit.
-// The guest cookie is minted by `me` (no separate guest endpoint needed).
+// One serverless function serving /api/auth/<action>, consolidated to stay under
+// Vercel Hobby's 12-function limit. A static function (not a [param] dynamic route,
+// which the project's "/api/(.*)" rewrite does not resolve) — vercel.json rewrites
+// /api/auth/<action> → /api/auth?action=<action>, so `req.query.action` is set here.
 export default async function handler(req, res) {
   switch (req.query.action) {
     case "signup": return signup(req, res);
