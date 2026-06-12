@@ -34,10 +34,15 @@
   const PAID_HOURLY_LIMIT = 100;
   const HOUR = 60 * 60 * 1000;
 
+  // Pro price is display-only here; the billing authority will be the Stripe price (STRIPE_PRICE_ID).
+  const PRO_PRICE_DISPLAY = "$15";
+  const PRO_PRICE_PERIOD = "/mo";
+
   const TIERS = {
     guest: { id: "guest", label: "Guest", limit: 5,                windowMs: null,     paidFeatures: false },
     free:  { id: "free",  label: "Free",  limit: 10,               windowMs: 4 * HOUR, paidFeatures: false },
-    paid:  { id: "paid",  label: "Pro",   limit: PAID_HOURLY_LIMIT, windowMs: HOUR,     paidFeatures: true  },
+    paid:  { id: "paid",  label: "Pro",   limit: PAID_HOURLY_LIMIT, windowMs: HOUR,     paidFeatures: true,
+             priceDisplay: PRO_PRICE_DISPLAY + PRO_PRICE_PERIOD },
   };
 
   // ==========================================================================
@@ -167,6 +172,9 @@
     TIERS,
 
     onChange(cb) { listeners.add(cb); return () => listeners.delete(cb); },
+
+    openPlans() { return renderPlans(); },
+    openAccount() { return openAccountModal(); },
 
     getQuotaStatus,
     async getCurrentUser() { return currentAccount(); },
@@ -316,6 +324,44 @@
         padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:var(--paper); }
       .rdu-account-meta .em { font-weight:800; font-size:0.9rem; word-break:break-all; }
       .rdu-account-meta .mt { font-size:0.76rem; color:var(--muted); }
+      .rdu-plans-btn {
+        min-height:42px; padding:0 14px; border-radius:8px; cursor:pointer;
+        border:1px solid var(--line); background:#fff; color:var(--ink);
+        font-weight:800; font-size:0.9rem; white-space:nowrap;
+        transition:border-color .18s ease, color .18s ease;
+      }
+      .rdu-plans-btn:hover { border-color:var(--brand); color:var(--brand-dark); }
+      .site-header.scrolled .rdu-plans-btn { background:rgba(255,255,255,.08); color:#e8f2ee; border-color:rgba(232,242,238,.35); }
+
+      .rdu-modal.rdu-modal--wide { max-width:840px; }
+      .rdu-plans-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-top:6px; }
+      .rdu-plan-card {
+        position:relative; display:flex; flex-direction:column; gap:8px;
+        padding:18px 16px 16px; border:1px solid var(--line); border-radius:12px; background:#fff;
+      }
+      .rdu-plan-card.featured { border-color:var(--brand); box-shadow:0 10px 30px rgba(26,107,80,.12); }
+      .rdu-plan-card.current { background:var(--paper); }
+      .rdu-plan-badge {
+        position:absolute; top:-10px; left:16px; padding:2px 9px; border-radius:999px;
+        font-size:0.64rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+        color:#fff; background:linear-gradient(135deg,var(--brand),var(--steel));
+      }
+      .rdu-plan-name { font-size:0.74rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+      .rdu-plan-price { font-size:1.7rem; font-weight:800; line-height:1; color:var(--ink); }
+      .rdu-plan-quota { font-size:0.86rem; font-weight:700; color:var(--brand-dark); }
+      .rdu-plan-quota span { display:block; font-size:0.74rem; font-weight:600; color:var(--muted); text-transform:none; }
+      .rdu-plan-feats { list-style:none; margin:4px 0 0; padding:0; display:grid; gap:6px; flex:1; }
+      .rdu-plan-feats li { position:relative; padding-left:18px; font-size:0.82rem; color:var(--ink); line-height:1.35; }
+      .rdu-plan-feats li::before { content:"✓"; position:absolute; left:0; color:var(--brand); font-weight:800; }
+      .rdu-plan-cta { margin-top:10px; }
+      .rdu-plan-cta .rdu-btn { min-height:42px; }
+      .rdu-plan-cta .rdu-btn[disabled] { opacity:.6; cursor:default; }
+
+      @media (max-width:760px) {
+        .rdu-modal.rdu-modal--wide { max-width:440px; }
+        .rdu-plans-grid { grid-template-columns:1fr; }
+        .rdu-plan-card.featured { order:-1; }
+      }
       @media (max-width:640px) { .rdu-quota-pill .rdu-quota-text-long { display:none; } }
     `;
     const tag = document.createElement("style");
@@ -337,6 +383,7 @@
     const wrap = document.createElement("div");
     wrap.className = "rdu-account";
     wrap.innerHTML = `
+      <button type="button" class="rdu-plans-btn" id="rduPlansBtn">Plans</button>
       <button type="button" class="rdu-quota-pill" id="rduQuotaPill" title="View your plan & usage">
         <span class="rdu-quota-dot" id="rduQuotaDot"></span>
         <span id="rduQuotaText">…</span>
@@ -349,6 +396,7 @@
     els.authBtn = wrap.querySelector("#rduAuthBtn");
     els.pill.addEventListener("click", () => openAccountModal());
     els.authBtn.addEventListener("click", () => openAccountModal());
+    wrap.querySelector("#rduPlansBtn").addEventListener("click", () => renderPlans());
   }
 
   async function refreshWidget() {
@@ -378,6 +426,7 @@
       </div>`;
     document.body.appendChild(overlay);
     els.overlay = overlay;
+    els.modal = overlay.querySelector(".rdu-modal");
     els.modalTitle = overlay.querySelector("#rduModalTitle");
     els.modalBody = overlay.querySelector("#rduModalBody");
     overlay.querySelector("#rduModalX").addEventListener("click", closeModal);
@@ -396,6 +445,7 @@
   async function renderModal(mode, blockedStatus) {
     const s = blockedStatus || (await getQuotaStatus());
     const body = els.modalBody;
+    if (els.modal) els.modal.classList.remove("rdu-modal--wide");
 
     // --- Blocked: out of credits ---
     if (mode === "quota") {
@@ -534,8 +584,69 @@
     });
   }
 
-  function openAccountModal()    { renderModal("account"); }
+  async function openAccountModal(tab) {
+    await renderModal("account");
+    if (tab === "signup") els.modalBody.querySelector('.rdu-tab[data-tab="signup"]')?.click();
+  }
   function openUpgradeModal(s, m) { renderModal(m || "quota", s); }
+
+  // ---- Plans / pricing modal ----------------------------------------------
+  function planWindowLabel(t) {
+    if (!t.windowMs) return "total";
+    if (t.windowMs === HOUR) return "per hour";
+    return `every ${Math.round(t.windowMs / HOUR)} hours`;
+  }
+
+  async function renderPlans() {
+    const s = await getQuotaStatus();
+    els.modalTitle.textContent = "Plans & pricing";
+    if (els.modal) els.modal.classList.add("rdu-modal--wide");
+
+    const card = (tierId, opts) => {
+      const t = TIERS[tierId];
+      const isCurrent = s.tier === tierId;
+      return `
+        <div class="rdu-plan-card ${opts.featured ? "featured" : ""} ${isCurrent ? "current" : ""}">
+          ${opts.featured ? `<span class="rdu-plan-badge">Best value</span>` : ""}
+          <div class="rdu-plan-name">${t.label}</div>
+          <div class="rdu-plan-price">${opts.price || "Free"}</div>
+          <div class="rdu-plan-quota">${t.limit} property scores <span>${planWindowLabel(t)}</span></div>
+          <ul class="rdu-plan-feats">${opts.feats.map((f) => `<li>${f}</li>`).join("")}</ul>
+          <div class="rdu-plan-cta">${
+            isCurrent
+              ? `<button class="rdu-btn rdu-btn-ghost" disabled>Current plan</button>`
+              : (opts.cta || "")
+          }</div>
+        </div>`;
+    };
+
+    els.modalBody.innerHTML = `
+      <p class="rdu-sub">A “property score” unlocks all data + AI calls for one property (comps, listing parse, and market intel share one credit). Reset starts a new property.</p>
+      <div class="rdu-plans-grid">
+        ${card("guest", {
+          feats: ["No account needed", "Full deal calculator", "Comps, parse &amp; market intel"],
+        })}
+        ${card("free", {
+          feats: ["Everything in Guest", "Resets every 4 hours", "Save your usage to an account"],
+          cta: `<button class="rdu-btn rdu-btn-primary" id="rduPlanFree">Create free account</button>`,
+        })}
+        ${card("paid", {
+          featured: true,
+          price: TIERS.paid.priceDisplay,
+          feats: ["Everything in Free", "Hourly limit, not 4-hourly", "One-click Market-Intel refresh"],
+          cta: `<button class="rdu-btn rdu-btn-primary" id="rduPlanPro">Upgrade to Pro</button>`,
+        })}
+      </div>
+      <p class="rdu-foot-note">Billing isn’t connected yet — “Upgrade” activates Pro for testing. Stripe checkout drops in later.</p>`;
+
+    els.modalBody.querySelector("#rduPlanFree")?.addEventListener("click", () => openAccountModal("signup"));
+    els.modalBody.querySelector("#rduPlanPro")?.addEventListener("click", async () => {
+      try { await RedataUser.upgradeToPaid(); closeModal(); }
+      catch { openAccountModal("signup"); }  // guest must create an account before upgrading
+    });
+
+    els.overlay.hidden = false;
+  }
 
   // ---- Boot ---------------------------------------------------------------
   function boot() {
